@@ -29,10 +29,4 @@ public class Mesher : MonoBehaviour
 
         _filter.mesh = m.GenerateMesh(true);
     }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 }
