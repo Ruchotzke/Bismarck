@@ -93,6 +93,18 @@ namespace bismarck.meshing
         }
 
         /// <summary>
+        /// Generate a set of triangles as a fan for this set of vertices.
+        /// </summary>
+        /// <param name="vertices"></param>
+        public void AddFan(Vertex[] vertices)
+        {
+            for (int i = 1; i < vertices.Length - 1; i++)
+            {
+                AddTriangle(vertices[0], vertices[i], vertices[i+1]);
+            }
+        }
+
+        /// <summary>
         /// Generate a mesh from this mesher's state.
         /// </summary>
         /// <param name="calculateNormals"></param>
