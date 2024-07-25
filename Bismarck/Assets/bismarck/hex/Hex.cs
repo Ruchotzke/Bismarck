@@ -65,6 +65,11 @@ namespace bismarck.hex
             return _v.GetHashCode();
         }
 
+        public override string ToString()
+        {
+            return "HEX<" + q + ", " + r + ", " + s + ">";
+        }
+
         /// <summary>
         /// Addition between two hex vectors.
         /// </summary>

@@ -44,7 +44,7 @@ namespace bismarck.hex
         {
             /* Apply the size and direction scale to the coordinate */
             float x = (Orientation.F0 * h.q + Orientation.F1 * h.r) * Size.x;
-            float z = (Orientation.F2 * h.q + Orientation.F3 * h.r) * Size.y;
+            float z = (Orientation.F2 * h.q + Orientation.F3 * h.r) * Size.z;
 
             /* Offset by the origin */
             return new Vector3(x, 0, z) + Origin;
@@ -59,7 +59,7 @@ namespace bismarck.hex
         {
             /* First get back to a centered, unit grid */
             p = (p - Origin);
-            p.Scale(Size);
+            p = new Vector3(p.x / Size.x, p.y / Size.y, p.z / Size.z);
             
             /* Multiply by the inverse transform to get back to hex */
             float q = Orientation.B0 * p.x + Orientation.B1 * p.z;

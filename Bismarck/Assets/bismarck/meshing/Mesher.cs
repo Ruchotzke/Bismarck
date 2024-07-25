@@ -86,7 +86,7 @@ namespace bismarck.meshing
                 _vertices.Add(c);
                 cInd = _vertices.Count - 1;
             }
-
+            
             _indices.Add(aInd);
             _indices.Add(bInd);
             _indices.Add(cInd);

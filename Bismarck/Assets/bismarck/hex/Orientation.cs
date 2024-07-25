@@ -35,12 +35,14 @@ namespace bismarck.hex
             StartAngle = angle;
         }
 
-        public static Orientation LayoutPointTop = new Orientation(
+        public static Orientation layoutPointTop = new Orientation(
             Mathf.Sqrt(3), Mathf.Sqrt(3) / 2.0f, 0.0f, 3.0f / 2.0f,
-            Mathf.Sqrt(3) / 3.0f, -1.0f / 3.0f, 0.0f, 2.0f / 3.0f, 0.5f);
+            Mathf.Sqrt(3) / 3.0f, -1.0f / 3.0f, 0.0f, 2.0f / 3.0f, 
+            0.5f);
 
-        public static Orientation LayoutFlatTop = new Orientation(
+        public static Orientation layoutFlatTop = new Orientation(
             3.0f / 2.0f, 0.0f, Mathf.Sqrt(3.0f) / 2.0f, Mathf.Sqrt(3.0f),
-            2.0f / 3.0f, 0.0f, -1.0f / 3.0f, Mathf.Sqrt(3.0f) / 3.0f, 0.0f);
+            2.0f / 3.0f, 0.0f, -1.0f / 3.0f, Mathf.Sqrt(3.0f) / 3.0f, 
+            0.0f);
     }
 }
