@@ -144,5 +144,35 @@ namespace bismarck.hex
         {
             return GetDirection(direction) + this;
         }
+
+        /// <summary>
+        /// Round this hex coordinate to the next center (integer) hex coordinate.
+        /// </summary>
+        /// <returns></returns>
+        public Hex Round()
+        {
+            int rq = Mathf.RoundToInt(q);
+            int rr = Mathf.RoundToInt(r);
+            int rs = Mathf.RoundToInt(s);
+
+            float qDiff = Mathf.Abs(rq - q);
+            float rDiff = Mathf.Abs(rr - r);
+            float sDiff = Mathf.Abs(rs - s);
+
+            if (qDiff > rDiff && qDiff > sDiff)
+            {
+                rq = -rr - rs;
+            }
+            else if (rDiff > sDiff)
+            {
+                rr = -rq - rs;
+            }
+            else
+            {
+                rs = -rq - rr;
+            }
+
+            return new Hex(rr, rq, rs);
+        }
     }
 }
