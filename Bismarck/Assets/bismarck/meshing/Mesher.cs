@@ -55,52 +55,67 @@ namespace bismarck.meshing
         /// <param name="a"></param>
         /// <param name="b"></param>
         /// <param name="c"></param>
-        public void AddTriangle(Vertex a, Vertex b, Vertex c)
+        /// <param name="attemptToReuse"></param>
+        public void AddTriangle(Vertex a, Vertex b, Vertex c, bool attemptToReuse = false)
         {
-            int aInd = -1, bInd = -1, cInd = -1;
-
-            for(int i = 0; i < _vertices.Count; i++)
+            if (attemptToReuse)
             {
-                var item = _vertices[i];
-                if (aInd == -1 && item.Equals(a)) aInd = i;
-                if (bInd == -1 && item.Equals(b)) bInd = i;
-                if (cInd == -1 && item.Equals(c)) cInd = i;
+                int aInd = -1, bInd = -1, cInd = -1;
 
-                if (aInd != -1 && bInd != -1 && cInd != -1) break;
+                for(int i = 0; i < _vertices.Count; i++)
+                {
+                    var item = _vertices[i];
+                    if (aInd == -1 && item.Equals(a)) aInd = i;
+                    if (bInd == -1 && item.Equals(b)) bInd = i;
+                    if (cInd == -1 && item.Equals(c)) cInd = i;
+
+                    if (aInd != -1 && bInd != -1 && cInd != -1) break;
+                }
+
+                if (aInd == -1)
+                {
+                    _vertices.Add(a);
+                    aInd = _vertices.Count - 1;
+                }
+
+                if (bInd == -1)
+                {
+                    _vertices.Add(b);
+                    bInd = _vertices.Count - 1;
+                }
+
+                if (cInd == -1)
+                {
+                    _vertices.Add(c);
+                    cInd = _vertices.Count - 1;
+                }
+            
+                _indices.Add(aInd);
+                _indices.Add(bInd);
+                _indices.Add(cInd);
             }
-
-            if (aInd == -1)
+            else
             {
                 _vertices.Add(a);
-                aInd = _vertices.Count - 1;
-            }
-
-            if (bInd == -1)
-            {
+                _indices.Add(_vertices.Count - 1);
                 _vertices.Add(b);
-                bInd = _vertices.Count - 1;
-            }
-
-            if (cInd == -1)
-            {
+                _indices.Add(_vertices.Count - 1);
                 _vertices.Add(c);
-                cInd = _vertices.Count - 1;
+                _indices.Add(_vertices.Count - 1);
             }
             
-            _indices.Add(aInd);
-            _indices.Add(bInd);
-            _indices.Add(cInd);
         }
 
         /// <summary>
         /// Generate a set of triangles as a fan for this set of vertices.
         /// </summary>
         /// <param name="vertices"></param>
-        public void AddFan(Vertex[] vertices)
+        /// <param name="mergeVertices"></param>
+        public void AddFan(Vertex[] vertices, bool mergeVertices = false)
         {
             for (int i = 1; i < vertices.Length - 1; i++)
             {
-                AddTriangle(vertices[0], vertices[i], vertices[i+1]);
+                AddTriangle(vertices[0], vertices[i], vertices[i+1], mergeVertices);
             }
         }
 
@@ -115,12 +130,14 @@ namespace bismarck.meshing
             List<Vector3> v = new List<Vector3>();
             List<Vector3> n = new List<Vector3>();
             List<Vector2> t = new List<Vector2>();
+            List<Color> c = new List<Color>();
 
             foreach (var vert in _vertices)
             {
                 v.Add(vert.Position);
                 if (!calculateNormals) n.Add(vert.Normal);
                 t.Add(vert.Texture);
+                c.Add(vert.Color);
             }
             
             /* Generate the mesh */
@@ -130,6 +147,7 @@ namespace bismarck.meshing
             };
             m.SetVertices(v);
             m.SetIndices(_indices, MeshTopology.Triangles, 0);
+            m.SetColors(c);
 
             if (calculateNormals)
             {

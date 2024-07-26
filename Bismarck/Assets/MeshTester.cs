@@ -1,8 +1,6 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using bismarck.hex;
 using bismarck.meshing;
+using bismarck.world;
 using TMPro;
 using UnityEngine;
 
@@ -33,13 +31,14 @@ public class MeshTester : MonoBehaviour
         Mesher m = new Mesher();
         
         /* Generate a map */
-        Map<int> map = new Map<int>(5);
-        map = new Map<int>(-5, 5, -5, 5);
+        Map<Cell> map = new Map<Cell>(-5, 5, -5, 5);
 
-        /* Render some hexagons */
+        /* Render some hexagons and generate their cells */
         foreach (var hex in map.GetAllHexes())
         {
-            MeshHex(hex.coord, l, m);
+            Color c = Random.value > 0.5f ? Color.blue : Color.green;
+            map.Set(hex.coord, new Cell(c, Random.Range(0, 3)));
+            MeshHex(hex.coord, map.Get(hex.coord), l, m);
         }
 
         _filter.mesh = m.GenerateMesh(true);
@@ -51,20 +50,21 @@ public class MeshTester : MonoBehaviour
     /// <param name="coord"></param>
     /// <param name="layout"></param>
     /// <param name="m"></param>
-    private void MeshHex(Hex coord, Layout layout, Mesher m)
+    private void MeshHex(Hex coord, Cell cell, Layout layout, Mesher m)
     {
         /* Get the corners for the center hex */
         Vector3[] corners = layout.GenerateCorners(coord);
+        Color color = cell.Color;
         Vertex[] c = new Vertex[6];
-        c[0] = new Vertex(corners[0]);  // flip the order to maintain CW ordering b/c unity
-        c[1] = new Vertex(corners[5]);
-        c[2] = new Vertex(corners[4]);
-        c[3] = new Vertex(corners[3]);
-        c[4] = new Vertex(corners[2]);
-        c[5] = new Vertex(corners[1]);
+        c[0] = new Vertex(corners[0], color:color);  // flip the order to maintain CW ordering b/c unity
+        c[1] = new Vertex(corners[5], color:color);
+        c[2] = new Vertex(corners[4], color:color);
+        c[3] = new Vertex(corners[3], color:color);
+        c[4] = new Vertex(corners[2], color:color);
+        c[5] = new Vertex(corners[1], color:color);
         
         /* Triangulate as a fan */
-        m.AddFan(c);
+        m.AddFan(c, false);
         
         /* Add a label */
         var label = Instantiate(pf_Label);

@@ -456,7 +456,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d3806b64e816e3a4890e3da3b85bea35, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  UseMaterial: {fileID: 2100000, guid: 6ef18080840d0274d92dd186568d3f42, type: 2}
+  UseMaterial: {fileID: 2100000, guid: eeb4df9a17e2f254da27351782ce4e82, type: 2}
   pf_Label: {fileID: 8384950707050535044, guid: ed9b1104a0b43e84189ff709b855b6a4,
     type: 3}
 --- !u!4 &2021628322

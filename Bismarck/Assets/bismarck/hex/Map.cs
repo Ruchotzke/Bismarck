@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace bismarck.hex
@@ -81,6 +83,40 @@ namespace bismarck.hex
             }
             
             return o;
+        }
+
+        /// <summary>
+        /// Get the element at a given index.
+        /// </summary>
+        /// <param name="coordinate"></param>
+        /// <returns></returns>
+        public T Get(Hex coordinate)
+        {
+            try
+            {
+                return _map[coordinate];
+            }
+            catch (Exception)
+            {
+                return default(T);
+            }
+        }
+
+        /// <summary>
+        /// Set (or add) the value provided.
+        /// </summary>
+        /// <param name="coordinate"></param>
+        /// <param name="value"></param>
+        public void Set(Hex coordinate, T value)
+        {
+            if(_map.Keys.Contains(coordinate))
+            {
+                _map[coordinate] = value;
+            }
+            else
+            {
+                _map.Add(coordinate, value);
+            }
         }
         
     }

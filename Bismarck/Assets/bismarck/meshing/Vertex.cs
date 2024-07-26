@@ -24,16 +24,23 @@ namespace bismarck.meshing
         public Vector2 Texture;
 
         /// <summary>
+        /// The color of the vertex.
+        /// </summary>
+        public Color Color;
+
+        /// <summary>
         /// Generate a new vertex.
         /// </summary>
         /// <param name="position"></param>
         /// <param name="normal"></param>
         /// <param name="texture"></param>
-        public Vertex(Vector3 position, Vector3 normal = default, Vector2 texture = default)
+        /// <param name="color"></param>
+        public Vertex(Vector3 position, Vector3 normal = default, Vector2 texture = default, Color color = default)
         {
             Position = position;
             Normal = normal;
             Texture = texture;
+            Color = color;
         }
 
         public override bool Equals(object obj)
