@@ -31,17 +31,15 @@ public class MeshTester : MonoBehaviour
         
         /* Generate a mesher */
         Mesher m = new Mesher();
+        
+        /* Generate a map */
+        Map<int> map = new Map<int>(5);
+        map = new Map<int>(-5, 5, -5, 5);
 
         /* Render some hexagons */
-        Hex center = new Hex(0, 0);
-        MeshHex(center, l, m);
-        for(int i = -2; i < 3; i++)
+        foreach (var hex in map.GetAllHexes())
         {
-            if (i != 0)
-            {
-                MeshHex(new Hex(i, 0), l, m);
-                MeshHex(new Hex(0, i), l, m);
-            }
+            MeshHex(hex.coord, l, m);
         }
 
         _filter.mesh = m.GenerateMesh(true);
@@ -70,7 +68,7 @@ public class MeshTester : MonoBehaviour
         
         /* Add a label */
         var label = Instantiate(pf_Label);
-        label.transform.position = layout.HexToWorld(coord) + new Vector3(0f, .2f, 0f);
+        label.transform.position = layout.HexToWorld(coord) + new Vector3(0f, .05f, 0f);
         label.text = "<" + coord.q + "," + coord.r + "," + coord.s + ">";
     }
 }
