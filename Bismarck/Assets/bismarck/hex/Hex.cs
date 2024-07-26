@@ -1,4 +1,5 @@
-﻿using bismarck.meshing;
+﻿using System.Collections.Generic;
+using bismarck.meshing;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Assertions;
@@ -114,13 +115,12 @@ namespace bismarck.hex
         }
 
         /// <summary>
-        /// Get the distance between this hex coordinate and another.
+        /// Get the distance between two hex coordinates.
         /// </summary>
-        /// <param name="other"></param>
         /// <returns></returns>
-        public float Distance(Hex other)
+        public static float Distance(Hex a, Hex b)
         {
-            return (this - other).Length();
+            return (a - b).Length();
         }
 
         /// <summary>
@@ -173,6 +173,44 @@ namespace bismarck.hex
             }
 
             return new Hex(rr, rq, rs);
+        }
+
+        /// <summary>
+        /// Linearly interpolate between two hex values.
+        /// </summary>
+        /// <param name="a">The starting point</param>
+        /// <param name="b">The ending point</param>
+        /// <param name="t">The amount to interpolate</param>
+        /// <returns>A hex value "t" between a and b</returns>
+        public static Hex Lerp(Hex a, Hex b, float t)
+        {
+            return new Hex(Mathf.Lerp(a.q, b.q, t),
+                Mathf.Lerp(a.r, b.r, t),
+                Mathf.Lerp(a.s, b.s, t));
+        }
+
+        /// <summary>
+        /// Get the list of hex coordinates between start and end, inclusive.
+        /// </summary>
+        /// <param name="start"></param>
+        /// <param name="end"></param>
+        /// <returns></returns>
+        public static List<Hex> DrawLine(Hex start, Hex end)
+        {
+            float distance = Hex.Distance(start, end);
+            
+            /* Nudge the points in a given direction to ensure they're never on an edge and round consistently */
+            Hex sNudge = new Hex(start.q + 1e-6f, start.r + 1e-6f, start.s - 2e-6f);
+            Hex eNudge = new Hex(end.q + 1e-6f, end.r + 1e-6f, end.s - 2e-6f);
+
+            List<Hex> output = new List<Hex>();
+            float step = 1.0f / Mathf.Max(distance, 1);
+            for (int i = 0; i < distance; i++)
+            {
+                output.Add(Hex.Lerp(sNudge, eNudge, step * i));
+            }
+
+            return output;
         }
     }
 }
