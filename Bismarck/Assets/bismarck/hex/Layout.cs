@@ -76,7 +76,7 @@ namespace bismarck.hex
         public Vector3 HexCornerOffset(int corner)
         {
             /* Compute the angle of the corner (a percentage of a full circle sweep) */
-            float angle = 2.0f * Mathf.PI * (Orientation.StartAngle + corner) / 6.0f;
+            float angle = -2.0f * Mathf.PI * (Orientation.StartAngle + corner) / 6.0f;
 
             return new Vector3(Size.x * Mathf.Cos(angle), 0f, Size.z * Mathf.Sin(angle));
         }
@@ -85,14 +85,15 @@ namespace bismarck.hex
         /// Generate all corners for a given hex.
         /// </summary>
         /// <param name="h"></param>
+        /// <param name="cornerScale">What scale the corners should be generated at (used to shrink the hexes)</param>
         /// <returns></returns>
-        public Vector3[] GenerateCorners(Hex h)
+        public Vector3[] GenerateCorners(Hex h, float cornerScale = 1f)
         {
             Vector3[] corners = new Vector3[6];
             Vector3 center = HexToWorld(h);
             for (int i = 0; i < 6; i++)
             {
-                corners[i] = center + HexCornerOffset(i);
+                corners[i] = center + HexCornerOffset(i) * cornerScale;
             }
 
             return corners;
