@@ -97,79 +97,9 @@ namespace bismarck.world
         private void GenerateBridges(Mesher m, Hex coord, Cell cell)
         {
             /* We need a bridge in left, upper left, and upper directions (0, -1, -2) */
-            Vector3 baseHeight = Vector3.up * cell.Height * WorldConfiguration.HEIGHT_MULTPLIER;
-            
-            /* Direction 0 */
-            /* Determine whether a viable neighbor exists */
-            Hex nHex = coord.GetNeighbor(0);
-            Cell nValue = Map.Get(nHex);
-            if (nValue != null)
-            {
-                Vector3 neighborHeight = Vector3.up * nValue.Height * WorldConfiguration.HEIGHT_MULTPLIER;
-                
-                /* Neighbor exists, so generate a bridge */
-                Vector3 a = HexLayout.HexCornerOffset(0) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(coord) + baseHeight;
-                Vector3 b = HexLayout.HexCornerOffset(-1) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(coord) + baseHeight;
-                Vector3 c = HexLayout.HexCornerOffset(3) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(nHex) + neighborHeight;
-                Vector3 d = HexLayout.HexCornerOffset(2) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(nHex) + neighborHeight;
-                
-                /* ABC and ACD will be the two triangles generated */
-                Vertex va = new Vertex(a, color: cell.Color);
-                Vertex vb = new Vertex(b, color: cell.Color);
-                Vertex vc = new Vertex(c, color: nValue.Color);
-                Vertex vd = new Vertex(d, color: nValue.Color);
-
-                m.AddTriangle(va, vb, vc);
-                m.AddTriangle(va, vc, vd);
-            }
-            
-            /* Direction -1 */
-            /* Determine whether a viable neighbor exists */
-            nHex = coord.GetNeighbor(-1);
-            nValue = Map.Get(nHex);
-            if (nValue != null)
-            {
-                Vector3 neighborHeight = Vector3.up * nValue.Height * WorldConfiguration.HEIGHT_MULTPLIER;
-                
-                /* Neighbor exists, so generate a bridge */
-                Vector3 a = HexLayout.HexCornerOffset(-1) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(coord) + baseHeight;
-                Vector3 b = HexLayout.HexCornerOffset(-2) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(coord) + baseHeight;
-                Vector3 c = HexLayout.HexCornerOffset(2) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(nHex) + neighborHeight;
-                Vector3 d = HexLayout.HexCornerOffset(1) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(nHex) + neighborHeight;
-                
-                /* ABC and ACD will be the two triangles generated */
-                Vertex va = new Vertex(a, color: cell.Color);
-                Vertex vb = new Vertex(b, color: cell.Color);
-                Vertex vc = new Vertex(c, color: nValue.Color);
-                Vertex vd = new Vertex(d, color: nValue.Color);
-            
-                m.AddTriangle(va, vb, vc);
-                m.AddTriangle(va, vc, vd);
-            }
-            
-            /* Direction -2 */
-            /* Determine whether a viable neighbor exists */
-            nHex = coord.GetNeighbor(-2);
-            nValue = Map.Get(nHex);
-            if (nValue != null)
-            {
-                Vector3 neighborHeight = Vector3.up * nValue.Height * WorldConfiguration.HEIGHT_MULTPLIER;
-
-                /* Neighbor exists, so generate a bridge */
-                Vector3 a = HexLayout.HexCornerOffset(-2) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(coord) + baseHeight;
-                Vector3 b = HexLayout.HexCornerOffset(-3) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(coord) + baseHeight;
-                Vector3 c = HexLayout.HexCornerOffset(1) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(nHex) + neighborHeight;
-                Vector3 d = HexLayout.HexCornerOffset(0) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(nHex) + neighborHeight;
-                
-                /* ABC and ACD will be the two triangles generated */
-                Vertex va = new Vertex(a, color: cell.Color);
-                Vertex vb = new Vertex(b, color: cell.Color);
-                Vertex vc = new Vertex(c, color: nValue.Color);
-                Vertex vd = new Vertex(d, color: nValue.Color);
-            
-                m.AddTriangle(va, vb, vc);
-                m.AddTriangle(va, vc, vd);
-            }
+            HandleBridge(m, coord, cell, 0);
+            HandleBridge(m, coord, cell, -1);
+            HandleBridge(m, coord, cell, -2);
         }
 
         /// <summary>
@@ -228,6 +158,39 @@ namespace bismarck.world
                 Vertex vc = new Vertex(c, color: tValue.Color);
 
                 m.AddTriangle(va, vc, vb);
+            }
+        }
+
+        /// <summary>
+        /// Handle the bridging between hexes for a given direction.
+        /// </summary>
+        /// <param name="m"></param>
+        /// <param name="coord"></param>
+        /// <param name="cell"></param>
+        /// <param name="direction"></param>
+        private void HandleBridge(Mesher m, Hex coord, Cell cell, int direction)
+        {
+            Hex nHex = coord.GetNeighbor(direction);
+            Cell nValue = Map.Get(nHex);
+            if (nValue != null)
+            {
+                Vector3 baseHeight = Vector3.up * cell.Height * WorldConfiguration.HEIGHT_MULTPLIER;
+                Vector3 neighborHeight = Vector3.up * nValue.Height * WorldConfiguration.HEIGHT_MULTPLIER;
+
+                /* Neighbor exists, so generate a bridge */
+                Vector3 a = HexLayout.HexCornerOffset(0 + direction) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(coord) + baseHeight;
+                Vector3 b = HexLayout.HexCornerOffset(5 + direction) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(coord) + baseHeight;
+                Vector3 c = HexLayout.HexCornerOffset(3 + direction) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(nHex) + neighborHeight;
+                Vector3 d = HexLayout.HexCornerOffset(2 + direction) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(nHex) + neighborHeight;
+                
+                /* ABC and ACD will be the two triangles generated */
+                Vertex va = new Vertex(a, color: cell.Color);
+                Vertex vb = new Vertex(b, color: cell.Color);
+                Vertex vc = new Vertex(c, color: nValue.Color);
+                Vertex vd = new Vertex(d, color: nValue.Color);
+            
+                m.AddTriangle(va, vb, vc);
+                m.AddTriangle(va, vc, vd);
             }
         }
     }

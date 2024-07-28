@@ -15,5 +15,10 @@
         /// How much height should be added per integer height.
         /// </summary>
         public const float HEIGHT_MULTPLIER = 0.25f;
+
+        /// <summary>
+        /// The number of terraces between adjacent heights.
+        /// </summary>
+        public const int NUM_TERRACES = 3;
     }
 }
