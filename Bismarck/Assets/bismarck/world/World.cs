@@ -177,20 +177,42 @@ namespace bismarck.world
                 Vector3 baseHeight = Vector3.up * cell.Height * WorldConfiguration.HEIGHT_MULTPLIER;
                 Vector3 neighborHeight = Vector3.up * nValue.Height * WorldConfiguration.HEIGHT_MULTPLIER;
 
-                /* Neighbor exists, so generate a bridge */
-                Vector3 a = HexLayout.HexCornerOffset(0 + direction) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(coord) + baseHeight;
-                Vector3 b = HexLayout.HexCornerOffset(5 + direction) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(coord) + baseHeight;
-                Vector3 c = HexLayout.HexCornerOffset(3 + direction) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(nHex) + neighborHeight;
-                Vector3 d = HexLayout.HexCornerOffset(2 + direction) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(nHex) + neighborHeight;
-                
-                /* ABC and ACD will be the two triangles generated */
-                Vertex va = new Vertex(a, color: cell.Color);
-                Vertex vb = new Vertex(b, color: cell.Color);
-                Vertex vc = new Vertex(c, color: nValue.Color);
-                Vertex vd = new Vertex(d, color: nValue.Color);
-            
-                m.AddTriangle(va, vb, vc);
-                m.AddTriangle(va, vc, vd);
+                /* If height difference is more than one, just straight mesh it */
+                if (Mathf.Abs(cell.Height - nValue.Height) != 1)
+                {
+                 /* Neighbor exists, so generate a bridge */
+                 Vector3 a = HexLayout.HexCornerOffset(0 + direction) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(coord) + baseHeight;
+                 Vector3 b = HexLayout.HexCornerOffset(5 + direction) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(coord) + baseHeight;
+                 Vector3 c = HexLayout.HexCornerOffset(3 + direction) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(nHex) + neighborHeight;
+                 Vector3 d = HexLayout.HexCornerOffset(2 + direction) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(nHex) + neighborHeight;
+                 
+                 /* ABC and ACD will be the two triangles generated */
+                 Vertex va = new Vertex(a, color: cell.Color);
+                 Vertex vb = new Vertex(b, color: cell.Color);
+                 Vertex vc = new Vertex(c, color: nValue.Color);
+                 Vertex vd = new Vertex(d, color: nValue.Color);
+             
+                 m.AddTriangle(va, vb, vc);
+                 m.AddTriangle(va, vc, vd);
+                }
+                else
+                {
+                    /* This needs to be terraced */
+                    
+                    /* Identify a direction vector from cell to n */
+                    Vector3 terraceDir = HexLayout.HexToWorld(nHex) - HexLayout.HexToWorld(coord);
+                    terraceDir.y = neighborHeight.y - baseHeight.y;
+                    
+                    /* Lerp along this direction, adding a terrace at each step */
+                    float step = 1f / WorldConfiguration.NUM_TERRACES + 1;
+                    Vector3 a = HexLayout.HexCornerOffset(0 + direction) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(coord) + baseHeight;
+                    Vector3 b = HexLayout.HexCornerOffset(5 + direction) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(coord) + baseHeight;
+                    for (int i = 0; i < WorldConfiguration.NUM_TERRACES + 1; i++)
+                    {
+                       /* Compute the next terrace coordinates in the current plane */
+                       Vector3 c = 
+                    }
+                }
             }
         }
     }
