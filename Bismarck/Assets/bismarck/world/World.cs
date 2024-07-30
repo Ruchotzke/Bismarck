@@ -38,6 +38,9 @@ namespace bismarck.world
             HexLayout = new Layout(Orientation.layoutPointTop, new Vector3(1, 0, 1), Vector3.zero);
             Map = new Map<Cell>(left, right, bottom, top);
             
+            /* Seed the RNG */
+            Random.InitState(5);
+            
             /* Add some initial data */
             foreach (var hex in Map.GetAllHexes())
             {
@@ -203,14 +206,42 @@ namespace bismarck.world
                     Vector3 terraceDir = HexLayout.HexToWorld(nHex) - HexLayout.HexToWorld(coord);
                     terraceDir.y = neighborHeight.y - baseHeight.y;
                     
+                    /* Keep the original offsets to use for lerping */
+                    Vector3 origA = HexLayout.HexCornerOffset(0 + direction) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(coord) + baseHeight;
+                    Vector3 origB = HexLayout.HexCornerOffset(5 + direction) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(coord) + baseHeight;
+                    Vector3 origC = HexLayout.HexCornerOffset(3 + direction) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(nHex) + neighborHeight;
+                    Vector3 origD = HexLayout.HexCornerOffset(2 + direction) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(nHex) + neighborHeight;
+                                        
                     /* Lerp along this direction, adding a terrace at each step */
-                    float step = 1f / WorldConfiguration.NUM_TERRACES + 1;
-                    Vector3 a = HexLayout.HexCornerOffset(0 + direction) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(coord) + baseHeight;
-                    Vector3 b = HexLayout.HexCornerOffset(5 + direction) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(coord) + baseHeight;
-                    for (int i = 0; i < WorldConfiguration.NUM_TERRACES + 1; i++)
+                    float step = 1f / (WorldConfiguration.NUM_TERRACES + 2);
+                    Vector3 a = origA;
+                    Vector3 b = origB; 
+                    for (int i = 1; i <= WorldConfiguration.NUM_TERRACES + 2; i++)
                     {
-                       /* Compute the next terrace coordinates in the current plane */
-                       Vector3 c = 
+                       /* Compute the next terrace coordinates */
+                       Vector3 c = Vector3.Lerp(origB, origC, step * i);
+                       Vector3 cLower = new Vector3(c.x, b.y, c.z);
+                       Vector3 d = Vector3.Lerp(origA, origD, step * i);
+                       Vector3 dLower = new Vector3(d.x, a.y, d.z);
+                     
+                       /* Figure out the current color */
+                       Color curr = Color.Lerp(cell.Color, nValue.Color, step * i);
+                       
+                       /* Triangulate this terrace */
+                       Vertex va = new Vertex(a, color: curr);
+                       Vertex vb = new Vertex(b, color: curr);
+                       Vertex vc = new Vertex(c, color: curr);
+                       Vertex vd = new Vertex(d, color: curr);
+                       Vertex vcl = new Vertex(cLower, color: curr);
+                       Vertex vdl = new Vertex(dLower, color: curr);
+                       m.AddTriangle(va, vb, vcl);
+                       m.AddTriangle(va, vcl, vdl);
+                       m.AddTriangle(vcl, vc, vdl);
+                       m.AddTriangle(vdl, vc, vd);
+
+                       /* Update the previous coordinates */
+                       a = d;
+                       b = c;
                     }
                 }
             }
