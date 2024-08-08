@@ -24,7 +24,8 @@ public class MeshTester : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        World world = new World(-2, 2, -2, 2);
+        int bound = 5;
+        World world = new World(-bound, bound, -bound, bound);
         world.pf_Label = pf_Label;
 
         Mesher m = new Mesher();

@@ -115,54 +115,10 @@ namespace bismarck.world
         private void GenerateCorners(Mesher m, Hex coord, Cell cell)
         {
             /* Work on the top right corner first */
-            Hex rHex = coord.GetNeighbor(0);
-            Cell rValue = Map.Get(rHex);
-            Hex trHex = coord.GetNeighbor(-1);
-            Cell trValue = Map.Get(trHex);
-            if (rValue != null && trValue != null)
-            {
-                Vector3 a = HexLayout.HexCornerOffset(-1) * (1f - WorldConfiguration.BLEND_REGION_SCALE)
-                            + HexLayout.HexToWorld(coord) +
-                            cell.Height * Vector3.up * WorldConfiguration.HEIGHT_MULTPLIER;
-                
-                Vector3 b = HexLayout.HexCornerOffset(3) * (1f - WorldConfiguration.BLEND_REGION_SCALE)
-                            + HexLayout.HexToWorld(rHex) +
-                            rValue.Height * Vector3.up * WorldConfiguration.HEIGHT_MULTPLIER;
-                
-                Vector3 c = HexLayout.HexCornerOffset(1) * (1f - WorldConfiguration.BLEND_REGION_SCALE)
-                            + HexLayout.HexToWorld(trHex) +
-                            trValue.Height * Vector3.up * WorldConfiguration.HEIGHT_MULTPLIER;
+            HandleCorner(m, coord, cell, 0);
 
-                Vertex va = new Vertex(a, color: cell.Color);
-                Vertex vb = new Vertex(b, color: rValue.Color);
-                Vertex vc = new Vertex(c, color: trValue.Color);
-
-                m.AddTriangle(va, vc, vb);
-            }
-            
             /* Work on the top corner next */
-            Hex tHex = coord.GetNeighbor(-2);
-            Cell tValue = Map.Get(tHex);
-            if (trValue != null && tValue != null)
-            {
-                Vector3 a = HexLayout.HexCornerOffset(-2) * (1f - WorldConfiguration.BLEND_REGION_SCALE)
-                            + HexLayout.HexToWorld(coord) +
-                            cell.Height * Vector3.up * WorldConfiguration.HEIGHT_MULTPLIER;
-                
-                Vector3 b = HexLayout.HexCornerOffset(2) * (1f - WorldConfiguration.BLEND_REGION_SCALE)
-                            + HexLayout.HexToWorld(trHex) +
-                            trValue.Height * Vector3.up * WorldConfiguration.HEIGHT_MULTPLIER;
-                
-                Vector3 c = HexLayout.HexCornerOffset(0) * (1f - WorldConfiguration.BLEND_REGION_SCALE)
-                            + HexLayout.HexToWorld(tHex) +
-                            tValue.Height * Vector3.up * WorldConfiguration.HEIGHT_MULTPLIER;
-
-                Vertex va = new Vertex(a, color: cell.Color);
-                Vertex vb = new Vertex(b, color: trValue.Color);
-                Vertex vc = new Vertex(c, color: tValue.Color);
-
-                m.AddTriangle(va, vc, vb);
-            }
+            HandleCorner(m, coord, cell, -1);
         }
 
         /// <summary>
@@ -203,10 +159,6 @@ namespace bismarck.world
                 {
                     /* This needs to be terraced */
                     
-                    /* Identify a direction vector from cell to n */
-                    Vector3 terraceDir = HexLayout.HexToWorld(nHex) - HexLayout.HexToWorld(coord);
-                    terraceDir.y = neighborHeight.y - baseHeight.y;
-                    
                     /* Keep the original offsets to use for lerping */
                     Vector3 origA = HexLayout.HexCornerOffset(0 + direction) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(coord) + baseHeight;
                     Vector3 origB = HexLayout.HexCornerOffset(5 + direction) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(coord) + baseHeight;
@@ -214,7 +166,6 @@ namespace bismarck.world
                     Vector3 origD = HexLayout.HexCornerOffset(2 + direction) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(nHex) + neighborHeight;
                                         
                     /* Lerp along this direction, adding a terrace at each step */
-                    float step = 1f / (WorldConfiguration.NUM_TERRACES + 1);
                     var aToD = TerraceLerp(origA, origD, cell.Color, nValue.Color);
                     var bToC = TerraceLerp(origB, origC, cell.Color, nValue.Color);
                     
@@ -229,36 +180,119 @@ namespace bismarck.world
                         m.AddTriangle(va, vb, vc);
                         m.AddTriangle(va, vc, vd);
                     }
-
-                    // for (int i = 1; i <= WorldConfiguration.NUM_TERRACES + 2; i++)
-                    // {
-                    //    /* Compute the next terrace coordinates */
-                    //    Vector3 c = Vector3.Lerp(origB, origC, step * i);
-                    //    Vector3 cLower = new Vector3(c.x, b.y, c.z);
-                    //    Vector3 d = Vector3.Lerp(origA, origD, step * i);
-                    //    Vector3 dLower = new Vector3(d.x, a.y, d.z);
-                    //  
-                    //    /* Figure out the current color */
-                    //    Color curr = Color.Lerp(cell.Color, nValue.Color, step * i);
-                    //    
-                    //    /* Triangulate this terrace */
-                    //    Vertex va = new Vertex(a, color: curr);
-                    //    Vertex vb = new Vertex(b, color: curr);
-                    //    Vertex vc = new Vertex(c, color: curr);
-                    //    Vertex vd = new Vertex(d, color: curr);
-                    //    Vertex vcl = new Vertex(cLower, color: curr);
-                    //    Vertex vdl = new Vertex(dLower, color: curr);
-                    //    m.AddTriangle(va, vb, vcl);
-                    //    m.AddTriangle(va, vcl, vdl);
-                    //    m.AddTriangle(vcl, vc, vdl);
-                    //    m.AddTriangle(vdl, vc, vd);
-                    //
-                    //    /* Update the previous coordinates */
-                    //    a = d;
-                    //    b = c;
-                    // }
                 }
             }
+        }
+
+        /// <summary>
+        /// Handle meshing a corner of a hex connecting three adjacent hexes.
+        /// </summary>
+        /// <param name="m"></param>
+        /// <param name="coord"></param>
+        /// <param name="cell"></param>
+        /// <param name="direction"></param>
+        private void HandleCorner(Mesher m, Hex coord, Cell cell, int direction)
+        {
+            /* Determine the neighbors and a height-based ordering */
+            Hex botHex = coord;
+            Hex rightHex = coord.GetNeighbor(direction);
+            Hex leftHex = coord.GetNeighbor(direction - 1);
+            Cell bCell = cell;
+            Cell rCell = Map.Get(rightHex);
+            Cell lCell = Map.Get(leftHex);
+            
+            if (lCell == null || rCell == null) return;
+            
+            Vector3 bvec = HexLayout.HexCornerOffset(-1 + direction) * (1f - WorldConfiguration.BLEND_REGION_SCALE) 
+                           + HexLayout.HexToWorld(botHex) 
+                           + bCell.Height * Vector3.up * WorldConfiguration.HEIGHT_MULTPLIER;
+            Vector3 lvec = HexLayout.HexCornerOffset(1 + direction) * (1f - WorldConfiguration.BLEND_REGION_SCALE) 
+                           + HexLayout.HexToWorld(leftHex) 
+                           + lCell.Height * Vector3.up * WorldConfiguration.HEIGHT_MULTPLIER;
+            Vector3 rvec = HexLayout.HexCornerOffset(3 + direction) * (1f - WorldConfiguration.BLEND_REGION_SCALE) 
+                           + HexLayout.HexToWorld(rightHex) 
+                           + rCell.Height * Vector3.up * WorldConfiguration.HEIGHT_MULTPLIER;
+
+            
+            
+            /* Find the lowest cell, and reorder left/right accordingly */
+            if (lCell.Height < cell.Height && lCell.Height < rCell.Height)
+            {
+                /* lcell is the lowest */
+                (botHex, bCell, bvec, leftHex, lCell, lvec, rightHex, rCell, rvec) = 
+                    (leftHex, lCell, lvec, rightHex, rCell, rvec, botHex, bCell, bvec);
+            }
+            else if (rCell.Height < cell.Height && rCell.Height < lCell.Height)
+            {
+                /* rcell is the lowest */
+                (botHex, bCell, bvec, leftHex, lCell, lvec, rightHex, rCell, rvec) = 
+                    (rightHex, rCell, rvec, botHex, bCell, bvec, leftHex, lCell, lvec);
+            }
+            
+            /* Determine the type of the two bottom-adjacent edges */
+            HexEdgeType leftEdgeType = GetEdgeType(bCell, lCell);
+            HexEdgeType rightEdgeType = GetEdgeType(bCell, rCell);
+
+            /* Check for a slope-slope-flat condition */
+            if (leftEdgeType == HexEdgeType.SLOPE)
+            {
+                if (rightEdgeType == HexEdgeType.SLOPE)
+                {
+                    /* SSF */
+                    TriangulateCornerTerraces(m, bvec, bCell, lvec, lCell, rvec, rCell);
+                }
+                else if (rightEdgeType == HexEdgeType.FLAT)
+                {
+                    /* SFS */
+                    TriangulateCornerTerraces(m, lvec, lCell, rvec, rCell, bvec, bCell);
+                }
+            }
+
+            if (rightEdgeType == HexEdgeType.SLOPE)
+            {
+                if (leftEdgeType == HexEdgeType.FLAT)
+                {
+                    /* FSS */
+                    TriangulateCornerTerraces(m, rvec, rCell, bvec, bCell, lvec, lCell);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Triangulate a dual-terraced corner.
+        /// </summary>
+        /// <param name="begin"></param>
+        /// <param name="beginCell"></param>
+        /// <param name="left"></param>
+        /// <param name="leftCell"></param>
+        /// <param name="right"></param>
+        /// <param name="rightCell"></param>
+        private void TriangulateCornerTerraces(Mesher m, Vector3 begin, Cell beginCell, Vector3 left, Cell leftCell,
+            Vector3 right, Cell rightCell)
+        {
+            /* Work waay begin to top */
+            var leftSide = TerraceLerp(begin, left, beginCell.Color, leftCell.Color);
+            var rightSide = TerraceLerp(begin, right, beginCell.Color, rightCell.Color);
+
+            /* First is a triangle */
+            Vertex bot = new Vertex(begin, color: beginCell.Color);
+            Vertex l = new Vertex(leftSide[1].point, color: leftSide[1].color);
+            Vertex r = new Vertex(rightSide[1].point, color: rightSide[1].color);
+            m.AddTriangle(bot, l, r);
+            
+            /* Now use quads to finish the rest of the terraces */
+            for (int i = 2; i < leftSide.Count; i++)
+            {
+                Vertex nl = new Vertex(leftSide[i].point, color: leftSide[i].color);
+                Vertex nr = new Vertex(rightSide[i].point, color: rightSide[i].color);
+
+                m.AddTriangle(l, nl, nr);
+                m.AddTriangle(l, nr, r);
+
+                l = nl;
+                r = nr;
+            }
+
         }
 
         /// <summary>
@@ -299,6 +333,26 @@ namespace bismarck.world
             points.Add((b, cb));
             
             return points;
+        }
+
+        private enum HexEdgeType
+        {
+            FLAT, SLOPE, CLIFF
+        }
+
+        /// <summary>
+        /// Get the edge type between two cells.
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
+        private HexEdgeType GetEdgeType(Cell a, Cell b)
+        {
+            var diff = Mathf.Abs(a.Height - b.Height);
+
+            if (diff == 0) return HexEdgeType.FLAT;
+            if (diff == 1) return HexEdgeType.SLOPE;
+            return HexEdgeType.CLIFF;
         }
     }
 }
