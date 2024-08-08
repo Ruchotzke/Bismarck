@@ -19,6 +19,6 @@
         /// <summary>
         /// The number of terraces between adjacent heights.
         /// </summary>
-        public const int NUM_TERRACES = 2;
+        public const int NUM_TERRACES = 4;
     }
 }

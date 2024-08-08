@@ -1,4 +1,5 @@
-﻿using bismarck.hex;
+﻿using System.Collections.Generic;
+using bismarck.hex;
 using bismarck.meshing;
 using TMPro;
 using UnityEngine;
@@ -213,38 +214,91 @@ namespace bismarck.world
                     Vector3 origD = HexLayout.HexCornerOffset(2 + direction) * (1f - WorldConfiguration.BLEND_REGION_SCALE) + HexLayout.HexToWorld(nHex) + neighborHeight;
                                         
                     /* Lerp along this direction, adding a terrace at each step */
-                    float step = 1f / (WorldConfiguration.NUM_TERRACES + 2);
-                    Vector3 a = origA;
-                    Vector3 b = origB; 
-                    for (int i = 1; i <= WorldConfiguration.NUM_TERRACES + 2; i++)
+                    float step = 1f / (WorldConfiguration.NUM_TERRACES + 1);
+                    var aToD = TerraceLerp(origA, origD, cell.Color, nValue.Color);
+                    var bToC = TerraceLerp(origB, origC, cell.Color, nValue.Color);
+                    
+                    /* Generate the mesh */
+                    for (int i = 0; i < aToD.Count - 1; i++)
                     {
-                       /* Compute the next terrace coordinates */
-                       Vector3 c = Vector3.Lerp(origB, origC, step * i);
-                       Vector3 cLower = new Vector3(c.x, b.y, c.z);
-                       Vector3 d = Vector3.Lerp(origA, origD, step * i);
-                       Vector3 dLower = new Vector3(d.x, a.y, d.z);
-                     
-                       /* Figure out the current color */
-                       Color curr = Color.Lerp(cell.Color, nValue.Color, step * i);
-                       
-                       /* Triangulate this terrace */
-                       Vertex va = new Vertex(a, color: curr);
-                       Vertex vb = new Vertex(b, color: curr);
-                       Vertex vc = new Vertex(c, color: curr);
-                       Vertex vd = new Vertex(d, color: curr);
-                       Vertex vcl = new Vertex(cLower, color: curr);
-                       Vertex vdl = new Vertex(dLower, color: curr);
-                       m.AddTriangle(va, vb, vcl);
-                       m.AddTriangle(va, vcl, vdl);
-                       m.AddTriangle(vcl, vc, vdl);
-                       m.AddTriangle(vdl, vc, vd);
+                        Vertex va = new Vertex(aToD[i].point, color: aToD[i].color);
+                        Vertex vb = new Vertex(bToC[i].point, color: bToC[i].color);
+                        Vertex vc = new Vertex(bToC[i+1].point, color: bToC[i+1].color);
+                        Vertex vd = new Vertex(aToD[i+1].point, color: aToD[i+1].color);
 
-                       /* Update the previous coordinates */
-                       a = d;
-                       b = c;
+                        m.AddTriangle(va, vb, vc);
+                        m.AddTriangle(va, vc, vd);
                     }
+
+                    // for (int i = 1; i <= WorldConfiguration.NUM_TERRACES + 2; i++)
+                    // {
+                    //    /* Compute the next terrace coordinates */
+                    //    Vector3 c = Vector3.Lerp(origB, origC, step * i);
+                    //    Vector3 cLower = new Vector3(c.x, b.y, c.z);
+                    //    Vector3 d = Vector3.Lerp(origA, origD, step * i);
+                    //    Vector3 dLower = new Vector3(d.x, a.y, d.z);
+                    //  
+                    //    /* Figure out the current color */
+                    //    Color curr = Color.Lerp(cell.Color, nValue.Color, step * i);
+                    //    
+                    //    /* Triangulate this terrace */
+                    //    Vertex va = new Vertex(a, color: curr);
+                    //    Vertex vb = new Vertex(b, color: curr);
+                    //    Vertex vc = new Vertex(c, color: curr);
+                    //    Vertex vd = new Vertex(d, color: curr);
+                    //    Vertex vcl = new Vertex(cLower, color: curr);
+                    //    Vertex vdl = new Vertex(dLower, color: curr);
+                    //    m.AddTriangle(va, vb, vcl);
+                    //    m.AddTriangle(va, vcl, vdl);
+                    //    m.AddTriangle(vcl, vc, vdl);
+                    //    m.AddTriangle(vdl, vc, vd);
+                    //
+                    //    /* Update the previous coordinates */
+                    //    a = d;
+                    //    b = c;
+                    // }
                 }
             }
+        }
+
+        /// <summary>
+        /// Generate all points and colors along a terrace from A to B.
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
+        public static List<(Vector3 point, Color color)> TerraceLerp(Vector3 a, Vector3 b, Color ca, Color cb)
+        {
+            List<(Vector3 point, Color color)> points = new List<(Vector3 point, Color color)>();
+
+            float horizDist = Vector3.Distance(new Vector3(a.x, 0, a.z),
+                new Vector3(b.x, 0, b.z));
+            float horizStep = horizDist / ((float)WorldConfiguration.NUM_TERRACES + 1);
+            float vertStep = (b.y - a.y) / WorldConfiguration.NUM_TERRACES;
+            Vector3 dir = (b - a);
+            dir.y = 0;
+            dir = dir.normalized;
+
+            points.Add((a, ca));
+            for (int i = 0; i < WorldConfiguration.NUM_TERRACES; i++)
+            {
+                /* Track forward */
+                Vector3 forward = points[2 * i].point + dir * horizStep;
+                
+                /* Track up */
+                Vector3 up = forward + Vector3.up * vertStep;
+                
+                /* Compute color */
+                Color col = Color.Lerp(ca, cb, horizStep * (i + 1) / horizDist);
+                
+                /* Add the new points */
+                points.Add((forward, col));
+                points.Add((up, col));
+            }
+
+            points.Add((b, cb));
+            
+            return points;
         }
     }
 }
