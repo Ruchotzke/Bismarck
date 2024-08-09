@@ -2,6 +2,7 @@
 using bismarck.hex;
 using bismarck.meshing;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace bismarck.world
@@ -246,15 +247,42 @@ namespace bismarck.world
                     /* SFS */
                     TriangulateCornerTerraces(m, lvec, lCell, rvec, rCell, bvec, bCell);
                 }
+                else
+                {
+                    /* SC? */
+                    TriangulateCornerTerracesCliff(m, bvec, bCell, lvec, lCell, rvec, rCell);
+                }
             }
-
-            if (rightEdgeType == HexEdgeType.SLOPE)
+            else if (rightEdgeType == HexEdgeType.SLOPE)
             {
                 if (leftEdgeType == HexEdgeType.FLAT)
                 {
                     /* FSS */
                     TriangulateCornerTerraces(m, rvec, rCell, bvec, bCell, lvec, lCell);
                 }
+                else
+                {
+                    /* CS? */
+                    TriangulateCornerCliffTerraces(m, bvec, bCell, lvec, lCell, rvec, rCell);
+                }
+            }
+            else if (GetEdgeType(lCell, rCell) == HexEdgeType.SLOPE)
+            {
+                if (lCell.Height < rCell.Height)
+                {
+                    /* CCSL */
+                    TriangulateCornerCliffTerraces(m, rvec, rCell, bvec, bCell, lvec, lCell);
+                }
+                else
+                {
+                    /* CCSR */
+                    TriangulateCornerTerracesCliff(m, lvec, lCell, rvec, rCell, bvec, bCell);
+                }
+            }
+            else
+            {
+                /* No terracing - just triangulate */
+                m.AddTriangle(bvec, lvec, rvec, bCell.Color, lCell.Color, rCell.Color);
             }
         }
 
@@ -293,6 +321,77 @@ namespace bismarck.world
                 r = nr;
             }
 
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="m"></param>
+        /// <param name="begin"></param>
+        /// <param name="beginCell"></param>
+        /// <param name="left"></param>
+        /// <param name="leftCell"></param>
+        /// <param name="right"></param>
+        /// <param name="rightCell"></param>
+        private void TriangulateCornerTerracesCliff(Mesher m, Vector3 begin, Cell beginCell, Vector3 left,
+            Cell leftCell, Vector3 right, Cell rightCell)
+        {
+            /* Split into two operations: bottom and top */
+            
+            /* Bottom - merge vertices at height of slope */
+            float b = 1f / (rightCell.Height - beginCell.Height);
+            if (b < 0) b = -b;
+            Vector3 boundary = Vector3.Lerp(begin, right, b);
+            Color bColor = Color.Lerp(beginCell.Color, rightCell.Color, b);
+            TriangulateBoundaryTriangle(m, begin, beginCell, left, leftCell, boundary, bColor);
+            
+            /* Top, if sloped terrace, otherwise just use a triangle */
+            if (GetEdgeType(leftCell, rightCell) == HexEdgeType.SLOPE)
+            {
+                TriangulateBoundaryTriangle(m, left, leftCell, right, rightCell, boundary, bColor);
+            }
+            else
+            {
+                m.AddTriangle(left, right, boundary, leftCell.Color, rightCell.Color, bColor);
+            }
+        }
+        
+        private void TriangulateCornerCliffTerraces(Mesher m, Vector3 begin, Cell beginCell, Vector3 left,
+            Cell leftCell, Vector3 right, Cell rightCell)
+        {
+            /* Split into two operations: bottom and top */
+            
+            /* Bottom - merge vertices at height of slope */
+            float b = 1f / (leftCell.Height - beginCell.Height);
+            if (b < 0) b = -b;
+            Vector3 boundary = Vector3.Lerp(begin, left, b);
+            Color bColor = Color.Lerp(beginCell.Color, leftCell.Color, b);
+            TriangulateBoundaryTriangle(m, right, rightCell, begin, beginCell, boundary, bColor);
+            
+            /* Top, if sloped terrace, otherwise just use a triangle */
+            if (GetEdgeType(leftCell, rightCell) == HexEdgeType.SLOPE)
+            {
+                TriangulateBoundaryTriangle(m, left, leftCell, right, rightCell, boundary, bColor);
+            }
+            else
+            {
+                m.AddTriangle(left, right, boundary, leftCell.Color, rightCell.Color, bColor);
+            }
+        }
+
+        /// <summary>
+        /// Triangulate a corner triangle with terracing.
+        /// </summary>
+        private void TriangulateBoundaryTriangle(Mesher m, Vector3 begin, Cell beginCell, Vector3 left,
+            Cell leftCell, Vector3 boundary, Color bColor)
+        {
+            /* Grab all terrace points from the left and connect them to the point */
+            var sideTerrace = TerraceLerp(begin, left, beginCell.Color, leftCell.Color);
+            for (int i = 0; i < sideTerrace.Count - 1; i++)
+            {
+                m.AddTriangle(sideTerrace[i].point, sideTerrace[i + 1].point, boundary, sideTerrace[i].color,
+                    sideTerrace[i + 1].color, bColor);
+            }
         }
 
         /// <summary>

@@ -107,6 +107,26 @@ namespace bismarck.meshing
         }
 
         /// <summary>
+        /// Shortcut to add a new triangle directly without vertex objects.
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <param name="c"></param>
+        /// <param name="ca"></param>
+        /// <param name="cb"></param>
+        /// <param name="cc"></param>
+        public void AddTriangle(Vector3 a, Vector3 b, Vector3 c, Color ca, Color cb, Color cc)
+        {
+            /* Generate three new vertices */
+            Vertex va = new Vertex(a, color: ca);
+            Vertex vb = new Vertex(b, color: cb);
+            Vertex vc = new Vertex(c, color: cc);
+            
+            /* Add the tri */
+            AddTriangle(va, vb, vc);
+        }
+
+        /// <summary>
         /// Generate a set of triangles as a fan for this set of vertices.
         /// </summary>
         /// <param name="vertices"></param>
