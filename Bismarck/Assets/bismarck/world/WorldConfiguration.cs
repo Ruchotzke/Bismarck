@@ -1,4 +1,7 @@
-﻿namespace bismarck.world
+﻿using UnityEngine;
+using UnityEngine.UIElements;
+
+namespace bismarck.world
 {
     /// <summary>
     /// A static class used to contain configuration values accessible anywhere.
@@ -20,5 +23,15 @@
         /// The number of terraces between adjacent heights.
         /// </summary>
         public const int NUM_TERRACES = 5;
+
+        /// <summary>
+        /// The world chunk size in the X direction.
+        /// </summary>
+        public const int CHUNK_SIZE_X = 10;
+
+        /// <summary>
+        /// The world chunk size in the Z direction.
+        /// </summary>
+        public const int CHUNK_SIZE_Z = 10;
     }
 }

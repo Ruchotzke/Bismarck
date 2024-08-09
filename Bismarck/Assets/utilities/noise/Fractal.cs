@@ -26,7 +26,7 @@ namespace utilities.noise
         /// <summary>
         /// Octave parameters for easier computation.
         /// </summary>
-        private List<(float amplitude, float frequency)> _octaves;
+        private List<(Vector3 offset, float amplitude, float frequency)> _octaves;
 
         /// <summary>
         /// The max value of the noise (used for normalizing).
@@ -40,6 +40,8 @@ namespace utilities.noise
         /// <param name="persistence"></param>
         public Fractal(int octaves, float persistence)
         {
+            Random.InitState(0);
+            
             /* Parms */
             Octaves = octaves;
             Persistence = persistence;
@@ -48,12 +50,14 @@ namespace utilities.noise
             _perlin = new Perlin();
             
             /* Octave information */
-            _octaves = new List<(float amplitude, float frequency)>();
+            _octaves = new List<(Vector3 offset, float amplitude, float frequency)>();
             _maxValue = 0;
             for (int i = 0; i < octaves; i++)
             {
-                _maxValue += Mathf.Pow(persistence, i);
-                _octaves.Add((Mathf.Pow(persistence, i), Mathf.Pow(2, i)));
+                _maxValue += Mathf.Pow(Persistence, i);
+                Vector3 offset = Random.insideUnitSphere;
+                offset.y = 0;
+                _octaves.Add((offset, Mathf.Pow(Persistence, i), Mathf.Pow(2, i)));
             }
         }
 
@@ -67,7 +71,7 @@ namespace utilities.noise
             float total = 0;
             for (int i = 0; i < Octaves; i++)
             {
-                total += _perlin.Sample(point * _octaves[i].frequency) * _octaves[i].amplitude;
+                total += _perlin.Sample(point * _octaves[i].frequency + _octaves[i].offset) * _octaves[i].amplitude;
             }
 
             return total / _maxValue;

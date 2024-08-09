@@ -86,6 +86,60 @@ namespace bismarck.hex
         }
 
         /// <summary>
+        /// Get all hexes in the provided range.
+        /// </summary>
+        /// <param name="left"></param>
+        /// <param name="right"></param>
+        /// <param name="bottom"></param>
+        /// <param name="top"></param>
+        /// <param name="pointedTop"></param>
+        /// <returns></returns>
+        public List<(Hex coord, T value)> GetHexes(int left, int right, int bottom, int top, bool pointedTop = true)
+        {
+            List<(Hex coord, T value)> o = new List<(Hex coord, T value)>();
+
+            /* From https://www.redblobgames.com/grids/hexagons/implementation.html */
+            if (pointedTop)
+            {
+                for (int r = bottom; r <= top; r++) 
+                { 
+                    int rOffset = Mathf.FloorToInt(r / 2.0f);
+                    for (int q = left - rOffset; q <= right - rOffset; q++) 
+                    {
+                        try
+                        {
+                            o.Add((new Hex(q, r), _map[new Hex(q, r)]));
+                        }
+                        catch (Exception)
+                        {
+                            Debug.LogWarning("Caution - attempting to access hex " + new Hex(q, r) + " which is off the map.");
+                        }
+                    }
+                }
+            }
+            else
+            {
+                for (int q = left; q <= right; q++) 
+                {
+                    int qOffset = Mathf.FloorToInt(q / 2.0f);
+                    for (int r = bottom - qOffset; r <= top - qOffset; r++)
+                    {
+                        try
+                        {
+                            o.Add((new Hex(q, r), _map[new Hex(q, r)]));
+                        }
+                        catch (Exception)
+                        {
+                            Debug.LogWarning("Caution - attempting to access hex " + new Hex(q, r) + " which is off the map.");
+                        }
+                    }
+                }
+            }
+            
+            return o;
+        }
+
+        /// <summary>
         /// Get the element at a given index.
         /// </summary>
         /// <param name="coordinate"></param>

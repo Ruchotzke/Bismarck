@@ -35,17 +35,18 @@ namespace bismarck.world
         /// <param name="right"></param>
         /// <param name="bottom"></param>
         /// <param name="top"></param>
-        public World(int left, int right, int bottom, int top)
+        public World(int horizontalChunks, int verticalChunks)
         {
             /* Generate the layout and map */
             HexLayout = new Layout(Orientation.layoutPointTop, new Vector3(1, 0, 1), Vector3.zero);
-            Map = new Map<Cell>(left, right, bottom, top);
+            Map = new Map<Cell>(0, horizontalChunks * WorldConfiguration.CHUNK_SIZE_X-1, 
+                0, verticalChunks * WorldConfiguration.CHUNK_SIZE_Z-1);
             
             /* Seed the RNG */
             Random.InitState(5);
             
             /* Create a noise generator for map generation */
-            Fractal noise = new Fractal(5, 0.75f);
+            Fractal noise = new Fractal(3, 0.6f);
             
             /* Add some initial data */
             foreach (var hex in Map.GetAllHexes())
@@ -53,8 +54,12 @@ namespace bismarck.world
                 /* Get the world-space coordinate of this hex */
                 Vector3 pos = HexLayout.HexToWorld(hex.coord);
                 pos.y = 0;  //mantain a 2D sample
+                
+                /* Sample */
+                float sample = noise.Sample(pos);
+                sample = Mathf.Pow(sample, 2);
 
-                int height = 0;
+                int height = (int)(sample * 10);
                 Color c = Color.Lerp(Color.black, Color.white, 0.1f * noise.Sample(pos));
                 Map.Set(hex.coord, new Cell(c, height));
             }
@@ -68,6 +73,24 @@ namespace bismarck.world
         public void GenerateMesh(Mesher mesher)
         {
             foreach (var hex in Map.GetAllHexes())
+            {
+                GenerateHex(mesher, hex.coord, hex.value);
+                GenerateBridges(mesher, hex.coord, hex.value);
+                GenerateCorners(mesher, hex.coord, hex.value);
+            }
+        }
+        
+        /// <summary>
+        /// Generate a subset of the map.
+        /// </summary>
+        /// <param name="mesher"></param>
+        /// <param name="left"></param>
+        /// <param name="right"></param>
+        /// <param name="bottom"></param>
+        /// <param name="top"></param>
+        public void GenerateMesh(Mesher mesher, int left, int right, int bottom, int top)
+        {
+            foreach (var hex in Map.GetHexes(left, right, bottom, top, true))
             {
                 GenerateHex(mesher, hex.coord, hex.value);
                 GenerateBridges(mesher, hex.coord, hex.value);
@@ -96,9 +119,9 @@ namespace bismarck.world
             m.AddFan(c, false);
         
             /* Add a label */
-            var label = Object.Instantiate(pf_Label);
-            label.transform.position = HexLayout.HexToWorld(coord) + new Vector3(0f, .05f, 0f) + Vector3.up * cell.Height * WorldConfiguration.HEIGHT_MULTPLIER;
-            label.text = "<" + coord.q + "," + coord.r + "," + coord.s + ">";
+            // var label = Object.Instantiate(pf_Label);
+            // label.transform.position = HexLayout.HexToWorld(coord) + new Vector3(0f, .05f, 0f) + Vector3.up * cell.Height * WorldConfiguration.HEIGHT_MULTPLIER;
+            // label.text = "<" + coord.q + "," + coord.r + "," + coord.s + ">";
         }
 
         /// <summary>
@@ -460,6 +483,25 @@ namespace bismarck.world
             if (diff == 0) return HexEdgeType.FLAT;
             if (diff == 1) return HexEdgeType.SLOPE;
             return HexEdgeType.CLIFF;
+        }
+
+        /// <summary>
+        /// Get the chunk bounds for a given chunk.
+        /// </summary>
+        /// <param name="chunkX"></param>
+        /// <param name="chunkY"></param>
+        /// <returns></returns>
+        public (int left, int right, int bot, int top) GetChunkBounds(int chunkX, int chunkY)
+        {
+            int left = chunkX * WorldConfiguration.CHUNK_SIZE_X;
+            int right = (chunkX + 1) * WorldConfiguration.CHUNK_SIZE_X;
+            if (left > right) (left, right) = (right, left);
+
+            int bot = chunkY * WorldConfiguration.CHUNK_SIZE_Z;
+            int top = (chunkY + 1) * WorldConfiguration.CHUNK_SIZE_Z;
+            if (bot > top) (bot, top) = (top, bot);
+
+            return (left, right-1, bot, top-1); //-1 because everything is inclusive
         }
     }
 }
