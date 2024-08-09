@@ -4,6 +4,7 @@ using bismarck.meshing;
 using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
+using utilities.noise;
 
 namespace bismarck.world
 {
@@ -43,11 +44,18 @@ namespace bismarck.world
             /* Seed the RNG */
             Random.InitState(5);
             
+            /* Create a noise generator for map generation */
+            Fractal noise = new Fractal(5, 0.75f);
+            
             /* Add some initial data */
             foreach (var hex in Map.GetAllHexes())
             {
-                int height = Random.Range(0, 4);
-                Color c = height > 0 ? Color.green : Color.blue;
+                /* Get the world-space coordinate of this hex */
+                Vector3 pos = HexLayout.HexToWorld(hex.coord);
+                pos.y = 0;  //mantain a 2D sample
+
+                int height = 0;
+                Color c = Color.Lerp(Color.black, Color.white, 0.1f * noise.Sample(pos));
                 Map.Set(hex.coord, new Cell(c, height));
             }
 
