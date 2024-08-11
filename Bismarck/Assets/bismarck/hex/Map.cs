@@ -13,6 +13,9 @@ namespace bismarck.hex
     {
 
         private Dictionary<Hex, T> _map;
+
+        private Hex _lowerBounds;
+        private Hex _upperBounds;
         
         /// <summary>
         /// Generate a new map in a hex shape.
@@ -28,9 +31,22 @@ namespace bismarck.hex
                 int r2 = Mathf.Min(radius, -q + radius);
                 for (int r = r1; r <= r2; r++)
                 {
+                    if (_lowerBounds.q > q) _lowerBounds = new Hex(q, _lowerBounds.r);
+                    if (_lowerBounds.r > r) _lowerBounds = new Hex(_lowerBounds.q, r);
+                    if (_upperBounds.q < q) _upperBounds = new Hex(q, _upperBounds.r);
+                    if (_upperBounds.r < r) _upperBounds = new Hex(_upperBounds.q, r);
+                    
                     _map.Add(new Hex(q, r), default(T));
                 }
             }
+        }
+
+        /// <summary>
+        /// Generate an empty map.
+        /// </summary>
+        public Map()
+        {
+            _map = new Dictionary<Hex, T>();
         }
 
         /// <summary>
@@ -52,6 +68,11 @@ namespace bismarck.hex
                     int rOffset = Mathf.FloorToInt(r / 2.0f);
                     for (int q = left - rOffset; q <= right - rOffset; q++) 
                     {
+                        if (_lowerBounds.q > q) _lowerBounds = new Hex(q, _lowerBounds.r);
+                        if (_lowerBounds.r > r) _lowerBounds = new Hex(_lowerBounds.q, r);
+                        if (_upperBounds.q < q) _upperBounds = new Hex(q, _upperBounds.r);
+                        if (_upperBounds.r < r) _upperBounds = new Hex(_upperBounds.q, r);
+                        
                         _map.Add(new Hex(q, r), default(T));
                     }
                 }
@@ -63,6 +84,11 @@ namespace bismarck.hex
                     int qOffset = Mathf.FloorToInt(q / 2.0f);
                     for (int r = bottom - qOffset; r <= top - qOffset; r++)
                     {
+                        if (_lowerBounds.q > q) _lowerBounds = new Hex(q, _lowerBounds.r);
+                        if (_lowerBounds.r > r) _lowerBounds = new Hex(_lowerBounds.q, r);
+                        if (_upperBounds.q < q) _upperBounds = new Hex(q, _upperBounds.r);
+                        if (_upperBounds.r < r) _upperBounds = new Hex(_upperBounds.q, r);
+                        
                         _map.Add(new Hex(q, r), default(T));
                     }
                 }
@@ -83,6 +109,15 @@ namespace bismarck.hex
             }
             
             return o;
+        }
+
+        /// <summary>
+        /// Get the extents of this map.
+        /// </summary>
+        /// <returns></returns>
+        public (Hex lower, Hex upper) GetBounds()
+        {
+            return (_lowerBounds, _upperBounds);
         }
 
         /// <summary>
@@ -146,9 +181,19 @@ namespace bismarck.hex
         /// <returns></returns>
         public T Get(Hex coordinate)
         {
+            return _map[coordinate];
+        }
+
+        /// <summary>
+        /// Get like the other method, but catch and return nulls/defaults for non-existent values.
+        /// </summary>
+        /// <param name="coordinates"></param>
+        /// <returns></returns>
+        public T GetDefault(Hex coordinates)
+        {
             try
             {
-                return _map[coordinate];
+                return _map[coordinates];
             }
             catch (Exception)
             {

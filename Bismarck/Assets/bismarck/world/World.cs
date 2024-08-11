@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using bismarck.hex;
 using bismarck.meshing;
+using bismarck.world.terrain;
 using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -35,7 +36,7 @@ namespace bismarck.world
         /// <param name="right"></param>
         /// <param name="bottom"></param>
         /// <param name="top"></param>
-        public World(int horizontalChunks, int verticalChunks)
+        public World(int horizontalChunks, int verticalChunks, int genIterations)
         {
             /* Generate the layout and map */
             HexLayout = new Layout(Orientation.layoutPointTop, new Vector3(1, 0, 1), Vector3.zero);
@@ -43,27 +44,11 @@ namespace bismarck.world
                 0, verticalChunks * WorldConfiguration.CHUNK_SIZE_Z-1);
             
             /* Seed the RNG */
-            Random.InitState(5);
+            Random.InitState(WorldConfiguration.SEED);
             
-            /* Create a noise generator for map generation */
-            Fractal noise = new Fractal(3, 0.6f);
-            
-            /* Add some initial data */
-            foreach (var hex in Map.GetAllHexes())
-            {
-                /* Get the world-space coordinate of this hex */
-                Vector3 pos = HexLayout.HexToWorld(hex.coord);
-                pos.y = 0;  //mantain a 2D sample
-                
-                /* Sample */
-                float sample = noise.Sample(pos);
-                sample = Mathf.Pow(sample, 2);
-
-                int height = (int)(sample * 10);
-                Color c = Color.Lerp(Color.black, Color.white, 0.1f * noise.Sample(pos));
-                Map.Set(hex.coord, new Cell(c, height));
-            }
-
+            /* Generate the world */
+            WorldGenerator gen = new WorldGenerator();
+            gen.GenerateTiles(Map, genIterations);
         }
 
         /// <summary>
@@ -163,7 +148,7 @@ namespace bismarck.world
         private void HandleBridge(Mesher m, Hex coord, Cell cell, int direction)
         {
             Hex nHex = coord.GetNeighbor(direction);
-            Cell nValue = Map.Get(nHex);
+            Cell nValue = Map.GetDefault(nHex);
             if (nValue != null)
             {
                 Vector3 baseHeight = Vector3.up * cell.Height * WorldConfiguration.HEIGHT_MULTPLIER;
@@ -230,8 +215,8 @@ namespace bismarck.world
             Hex rightHex = coord.GetNeighbor(direction);
             Hex leftHex = coord.GetNeighbor(direction - 1);
             Cell bCell = cell;
-            Cell rCell = Map.Get(rightHex);
-            Cell lCell = Map.Get(leftHex);
+            Cell rCell = Map.GetDefault(rightHex);
+            Cell lCell = Map.GetDefault(leftHex);
             
             if (lCell == null || rCell == null) return;
             

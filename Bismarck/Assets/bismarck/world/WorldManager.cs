@@ -47,12 +47,15 @@ namespace bismarck.world
             /* Initialize the singleton */
             if (Instance != null) Destroy(gameObject);
             Instance = this;
+            
+            /* Initialize the world seed */
+            WorldConfiguration.SEED = DateTime.Now.Second;
         }
 
         private void Start()
         {
             /* Generate a new world */
-            _world = new World(WorldSize.x, WorldSize.y);
+            _world = new World(WorldSize.x, WorldSize.y, 1);
             _chunks = new Chunk[WorldSize.x,WorldSize.y];
 
             /* Instantiate the chunks */
@@ -69,6 +72,13 @@ namespace bismarck.world
             }
         }
 
+        public void RegenWorld(int numIterations)
+        {
+            _world = new World(WorldSize.x, WorldSize.y, numIterations);
+            
+            UpdateAll();
+        } 
+
         /// <summary>
         /// Force a render update for a given chunk.
         /// </summary>
@@ -81,6 +91,17 @@ namespace bismarck.world
             _world.GenerateMesh(m, bounds.left, bounds.right, bounds.bot, bounds.top);
             _chunks[chunkX, chunkY]
                 .Initialize(WorldMaterial, m.GenerateMesh(true));
+        }
+
+        public void UpdateAll()
+        {
+            for(int xChunk = 0; xChunk < WorldSize.x; xChunk++)
+            {
+                for(int yChunk = 0; yChunk < WorldSize.y; yChunk++)
+                {
+                    UpdateChunk(xChunk, yChunk);
+                }
+            }
         }
     }
 }

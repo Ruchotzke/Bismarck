@@ -129,7 +129,7 @@ namespace bismarck.hex
         /// </summary>
         /// <param name="direction"></param>
         /// <returns></returns>
-        public Hex GetDirection(int direction)
+        public readonly Hex GetDirection(int direction)
         {
             return Directions[(6 + (direction % 6)) % 6];
         }
@@ -140,7 +140,7 @@ namespace bismarck.hex
         /// </summary>
         /// <param name="direction"></param>
         /// <returns></returns>
-        public Hex GetNeighbor(int direction)
+        public readonly Hex GetNeighbor(int direction)
         {
             return GetDirection(direction) + this;
         }
@@ -211,6 +211,32 @@ namespace bismarck.hex
             }
 
             return output;
+        }
+        
+        /// <summary>
+        /// Convert this hex coordinate to offset form.
+        /// </summary>
+        /// <returns></returns>
+        public (int row, int col) ToOffsetCoord()
+        {
+            float col = q + (int)((r - 1 * ((int)r & 1)) / 2);
+            float row = r;
+
+            return (Mathf.RoundToInt(row), Mathf.RoundToInt(col));
+        }
+
+        /// <summary>
+        /// Convert an offset coordinate to cube.
+        /// </summary>
+        /// <param name="row"></param>
+        /// <param name="col"></param>
+        /// <returns></returns>
+        public static Hex FromOffset(int row, int col)
+        {
+            float q = col - (int)((row - 1 * (row & 1)) / 2);
+            float r = row;
+
+            return new Hex(q, r);
         }
     }
 }

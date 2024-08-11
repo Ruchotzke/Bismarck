@@ -33,5 +33,10 @@ namespace bismarck.world
         /// The world chunk size in the Z direction.
         /// </summary>
         public const int CHUNK_SIZE_Z = 10;
+
+        /// <summary>
+        /// The seed used for world generation.
+        /// </summary>
+        public static int SEED = 929293191;
     }
 }
