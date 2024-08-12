@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class GenStepper : MonoBehaviour
 {
-    private int iterations = 0;
+    private int iterations = 1;
     
     private void Update()
     {

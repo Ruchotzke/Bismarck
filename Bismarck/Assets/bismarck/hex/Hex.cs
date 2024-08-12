@@ -13,9 +13,9 @@ namespace bismarck.hex
     {
         private readonly Vector3 _v;
 
-        public float q => _v.x;
-        public float r => _v.y;
-        public float s => _v.z;
+        public readonly float q => _v.x;
+        public readonly float r => _v.y;
+        public readonly float s => _v.z;
 
         /// <summary>
         /// A set of direction vectors, one for each side of the hexagon.
@@ -217,7 +217,7 @@ namespace bismarck.hex
         /// Convert this hex coordinate to offset form.
         /// </summary>
         /// <returns></returns>
-        public (int row, int col) ToOffsetCoord()
+        public readonly (int row, int col) ToOffsetCoord()
         {
             float col = q + (int)((r - 1 * ((int)r & 1)) / 2);
             float row = r;

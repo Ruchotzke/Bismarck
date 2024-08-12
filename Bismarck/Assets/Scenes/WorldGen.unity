@@ -501,7 +501,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   WorldMaterial: {fileID: 2100000, guid: eeb4df9a17e2f254da27351782ce4e82, type: 2}
-  WorldSize: {x: 8, y: 8}
+  pf_Label: {fileID: 8384950707050535044, guid: ed9b1104a0b43e84189ff709b855b6a4,
+    type: 3}
+  WorldSize: {x: 4, y: 4}
 --- !u!4 &2077734133
 Transform:
   m_ObjectHideFlags: 0

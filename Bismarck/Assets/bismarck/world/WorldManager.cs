@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using bismarck.meshing;
+using TMPro;
 using UnityEngine;
 
 namespace bismarck.world
@@ -20,6 +21,11 @@ namespace bismarck.world
         #region RENDERING
 
         [Header("Rendering")] public Material WorldMaterial;
+
+        /// <summary>
+        /// The label for hex coordinates.
+        /// </summary>
+        public TextMeshPro pf_Label;
 
         #endregion
         
@@ -56,6 +62,7 @@ namespace bismarck.world
         {
             /* Generate a new world */
             _world = new World(WorldSize.x, WorldSize.y, 1);
+            _world.pf_Label = pf_Label;
             _chunks = new Chunk[WorldSize.x,WorldSize.y];
 
             /* Instantiate the chunks */
@@ -74,7 +81,15 @@ namespace bismarck.world
 
         public void RegenWorld(int numIterations)
         {
+            /* First clear out old labels */
+            foreach (var l in _world.Labels)
+            {
+                Destroy(l.gameObject);
+            }
+            
+            /* Generate */
             _world = new World(WorldSize.x, WorldSize.y, numIterations);
+            _world.pf_Label = pf_Label;
             
             UpdateAll();
         } 

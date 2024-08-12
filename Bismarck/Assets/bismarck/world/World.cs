@@ -29,6 +29,8 @@ namespace bismarck.world
         /// </summary>
         public TextMeshPro pf_Label;
 
+        public List<TextMeshPro> Labels = new List<TextMeshPro>();
+
         /// <summary>
         /// Instantiate a new world.
         /// </summary>
@@ -104,9 +106,12 @@ namespace bismarck.world
             m.AddFan(c, false);
         
             /* Add a label */
-            // var label = Object.Instantiate(pf_Label);
-            // label.transform.position = HexLayout.HexToWorld(coord) + new Vector3(0f, .05f, 0f) + Vector3.up * cell.Height * WorldConfiguration.HEIGHT_MULTPLIER;
-            // label.text = "<" + coord.q + "," + coord.r + "," + coord.s + ">";
+            var label = Object.Instantiate(pf_Label);
+            label.transform.position = HexLayout.HexToWorld(coord) + new Vector3(0f, .05f, 0f) + Vector3.up * cell.Height * WorldConfiguration.HEIGHT_MULTPLIER;
+            var offset = coord.ToOffsetCoord();
+            label.text = "<" + offset.row + ", " + offset.col + ">";
+            label.text += "\n<" + coord.q + "," + coord.r + "," + coord.s + ">";
+            Labels.Add(label);
         }
 
         /// <summary>

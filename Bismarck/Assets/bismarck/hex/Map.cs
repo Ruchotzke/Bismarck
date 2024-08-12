@@ -214,6 +214,10 @@ namespace bismarck.hex
             }
             else
             {
+                if (_lowerBounds.q > coordinate.q) _lowerBounds = new Hex(coordinate.q, _lowerBounds.r);
+                if (_lowerBounds.r > coordinate.r) _lowerBounds = new Hex(_lowerBounds.q, coordinate.r);
+                if (_upperBounds.q < coordinate.q) _upperBounds = new Hex(coordinate.q, _upperBounds.r);
+                if (_upperBounds.r < coordinate.r) _upperBounds = new Hex(_upperBounds.q, coordinate.r);
                 _map.Add(coordinate, value);
             }
         }

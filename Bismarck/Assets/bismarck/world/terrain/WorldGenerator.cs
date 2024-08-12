@@ -36,75 +36,59 @@ namespace bismarck.world.terrain
                 genMap.Set(hex.coord, new TerrainGenCell(initHeight));
             }
             
+            /* Convert into a native array so we can use the job system */
+            int rowSize = 40;
+            int colSize = 40;
+            NativeArray<TerrainGenCell> bufferA = new NativeArray<TerrainGenCell>(rowSize * colSize, Allocator.TempJob,
+                NativeArrayOptions.UninitializedMemory);
+            NativeArray<TerrainGenCell> bufferB = new NativeArray<TerrainGenCell>(rowSize * colSize, Allocator.TempJob,
+                NativeArrayOptions.UninitializedMemory);
+            
+            /* Insert all cells into the array */
+            foreach (var hex in genMap.GetAllHexes())
+            {
+                var offset = hex.coord.ToOffsetCoord();
+                int index = offset.row * rowSize + offset.col;
+                bufferA[index] = hex.value;
+            }
+            
             /* Loop and do cellular automata */
+            bool aIsInput = true;
             for (int loop = 0; loop < iterations; loop++)
             {
-                /* Make a new working copy */
-                Map<TerrainGenCell> nextMap = new Map<TerrainGenCell>();
-                
-                /* Iterate through each cell coordinate */
-                foreach (var curr in genMap.GetAllHexes())
+                /* Generate a new job, swapping input/output */
+                WorldGenJob genJob = new WorldGenJob()
                 {
-                    /* Get info about this hex */
-                    TerrainGenCell currCell = genMap.Get(curr.coord);
-                    
-                    /* Attempt to account for all neighbors (edges are not processed) */
-                    float neighborHeights = 0;
-                    for (int dir = 0; dir < 6; dir++)
-                    {
-                        try
-                        {
-                            neighborHeights += genMap.Get(curr.coord.GetNeighbor(dir)).height;
-                        }
-                        catch (Exception)
-                        {
-                            /* This is an edge. height remains zero */
-                            neighborHeights = -1.0f;
-                            break;
-                        }
-                    }
-
-                    if (neighborHeights < 0.0f)
-                    {
-                        nextMap.Set(curr.coord, new TerrainGenCell(0));
-                        continue;
-                    }
-                    
-                    /* Apply automata rules */
-                    float diff = currCell.height - (neighborHeights / 6);
-                    float nextHeight = 0;
-                    if (neighborHeights == 0)
-                    {
-                        /* Ocean should never become anything else on its own */
-                        nextHeight = 0;
-                    }
-                    else if (neighborHeights < 6)
-                    {
-                        /* Low lying areas tend to turn into oceans */
-                        nextHeight = currCell.height - Random.Range(0.0f, 2.0f);
-                    }
-                    else if (Mathf.Abs(diff) < 2)
-                    {
-                        /* Flatish areas should fluctuate */
-                        nextHeight = currCell.height + Random.Range(-1.0f, 2.0f);
-                    }
-                    else if (-diff > 2)
-                    {
-                        /* If a cell is lower than its neighbors, it should grow towards its neighbor */
-                        nextHeight = currCell.height + Random.Range(0.0f, (neighborHeights / 6));
-                    }
-                    else
-                    {
-                        nextHeight = currCell.height;
-                    }
-
-                    nextHeight = Mathf.Clamp(nextHeight, 0f, 15f);
-                    nextMap.Set(curr.coord, new TerrainGenCell(nextHeight));
-                }
+                    input = aIsInput ? bufferA : bufferB,
+                    output = aIsInput ? bufferB : bufferA,
+                    rowCount = rowSize,
+                    colCount = colSize
+                };
                 
-                /* Finally, iterate the map */
-                genMap = nextMap;
+                /* Process the job */
+                JobHandle handle = genJob.Schedule(rowSize * colSize, 20);
+                handle.Complete();
+                
+                /* Swap the buffers */
+                aIsInput = !aIsInput;
             }
+            
+            /* Write the heights back to the gen map */
+            for (int row = 0; row < rowSize; row++)
+            {
+                for (int col = 0; col < colSize; col++)
+                {
+                    int index = col + row * rowSize;
+                    Hex h = Hex.FromOffset(row, col);
+                    
+                    genMap.Set(h, new TerrainGenCell((aIsInput ? bufferA : bufferB)[index].height));
+                }
+            }
+            
+            /* Let the scheduler know it can free buffers */
+            bufferA.Dispose();
+            bufferB.Dispose();
+            Debug.Log("Iterated");
             
             /* Convert the map heights to cell heights */
             foreach (var hex in map.GetAllHexes())
@@ -142,8 +126,9 @@ namespace bismarck.world.terrain
         /// </summary>
         private struct WorldGenJob : IJobParallelFor
         {
-            public NativeArray<TerrainGenCell> input;
-            public int stride;
+            [ReadOnly] public NativeArray<TerrainGenCell> input;
+            [ReadOnly] public int rowCount;
+            [ReadOnly] public int colCount;
             
             public NativeArray<TerrainGenCell> output;
 
@@ -151,32 +136,31 @@ namespace bismarck.world.terrain
             {
                 /* Get a reference to the proper hex for this element */
                 Hex curr = IndexToHex(index);
+                Debug.Log(curr.ToOffsetCoord() + " " + curr);
                 
                 /* Attempt to account for all neighbors (edges are not processed) */
+                if (index / colCount == 0 || index % colCount == 0 || index / colCount == rowCount - 1 || index % colCount == colCount - 1)
+                {
+                    /* This is an edge - immediately cancel */
+                    output[index] = new TerrainGenCell(0);
+                }
+                
+                /* With all edges removed, we can now work normally without fear of OOB accesses */
                 float neighborHeights = 0;
                 for (int dir = 0; dir < 6; dir++)
                 {
-                    try
-                    {
-                        /* Get the offset for this neighbor */
-                        Hex neighbor = curr.GetNeighbor(dir);
-                        int neighborIndex = HexToIndex(neighbor);
-                        
-                        /* Attempt to index and read the data */
-                        neighborHeights += input[neighborIndex].height;
-                    }
-                    catch (Exception)
-                    {
-                        /* This is an edge. height remains zero */
-                        neighborHeights = -1.0f;
-                        break;
-                    }
+                    /* Get the offset for this neighbor */
+                    Hex neighbor = curr.GetNeighbor(dir);
+                    int neighborIndex = HexToIndex(neighbor);
+                    
+                    /* Attempt to index and read the data */
+                    neighborHeights += input[neighborIndex].height;
                 }
                 
                 /* Error: if -1.0f height, we know this was an edge */
                 if (neighborHeights < 0.0f)
                 {
-                    output[index] = new TerrainGenCell(0.0f);
+                    output[index] = new TerrainGenCell(3.0f);
                     return;
                 }
                 
@@ -191,17 +175,17 @@ namespace bismarck.world.terrain
                 else if (neighborHeights < 6)
                 {
                     /* Low lying areas tend to turn into oceans */
-                    nextHeight = input[index].height - Random.Range(0.0f, 2.0f);
+                    nextHeight = input[index].height - 1;
                 }
                 else if (Mathf.Abs(diff) < 2)
                 {
                     /* Flatish areas should fluctuate */
-                    nextHeight = input[index].height + Random.Range(-1.0f, 2.0f);
+                    nextHeight = input[index].height + 0.5f;
                 }
                 else if (-diff > 2)
                 {
                     /* If a cell is lower than its neighbors, it should grow towards its neighbor */
-                    nextHeight = input[index].height + Random.Range(0.0f, (neighborHeights / 6));
+                    nextHeight = input[index].height + 2;
                 }
                 else
                 {
@@ -210,13 +194,13 @@ namespace bismarck.world.terrain
                 
                 /* Clamp the height within an acceptable range and continue */
                 nextHeight = Mathf.Clamp(nextHeight, 0f, 15f);
-                input[index] = new TerrainGenCell(nextHeight);
+                output[index] = new TerrainGenCell(nextHeight);
             }
 
             private Hex IndexToHex(int index)
             {
-                int row = index / stride;
-                int col = index % stride;
+                int row = index / colCount;
+                int col = index % colCount;
 
                 return Hex.FromOffset(row, col);
             }
@@ -225,7 +209,7 @@ namespace bismarck.world.terrain
             {
                 var offset = h.ToOffsetCoord();
 
-                return offset.row * stride + offset.col;
+                return offset.row * colCount + offset.col;
             }
         }
     }
