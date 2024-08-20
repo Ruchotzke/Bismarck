@@ -81,7 +81,7 @@ namespace bismarck.world.terrain
                     else if (neighborHeights < 6)
                     {
                         /* Low lying areas tend to turn into oceans */
-                        nextHeight = currCell.height - Random.Range(0.0f, 2.0f);
+                        nextHeight = currCell.height - Random.Range(-0.5f, 2.0f);
                     }
                     else if (Mathf.Abs(diff) < 2)
                     {
