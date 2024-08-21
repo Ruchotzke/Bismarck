@@ -36,13 +36,12 @@ namespace bismarck.world
         /// <param name="right"></param>
         /// <param name="bottom"></param>
         /// <param name="top"></param>
-        public World(int horizontalChunks, int verticalChunks, int genIterations)
+        public World(int horizontalChunks, int verticalChunks)
         {
             /* Generate the layout and map */
             HexLayout = new Layout(Orientation.layoutPointTop, new Vector3(1, 0, 1), Vector3.zero);
-            Map = new Map<Cell>(0, horizontalChunks * WorldConfiguration.CHUNK_SIZE_X-1, 
-                0, verticalChunks * WorldConfiguration.CHUNK_SIZE_Z-1);
-            
+            Map = new Map<Cell>(verticalChunks * WorldConfiguration.CHUNK_SIZE_Z, horizontalChunks * WorldConfiguration.CHUNK_SIZE_X);
+
             /* Seed the RNG */
             Random.InitState(WorldConfiguration.SEED);
             
@@ -75,7 +74,7 @@ namespace bismarck.world
         /// <param name="top"></param>
         public void GenerateMesh(Mesher mesher, int left, int right, int bottom, int top)
         {
-            foreach (var hex in Map.GetHexes(left, right, bottom, top, true))
+            foreach (var hex in Map.GetHexes(left, right, bottom, top))
             {
                 GenerateHex(mesher, hex.coord, hex.value);
                 GenerateBridges(mesher, hex.coord, hex.value);
@@ -148,7 +147,7 @@ namespace bismarck.world
         private void HandleBridge(Mesher m, Hex coord, Cell cell, int direction)
         {
             Hex nHex = coord.GetNeighbor(direction);
-            Cell nValue = Map.GetDefault(nHex);
+            Cell nValue = Map[nHex];
             if (nValue != null)
             {
                 Vector3 baseHeight = Vector3.up * cell.Height * WorldConfiguration.HEIGHT_MULTPLIER;
@@ -215,8 +214,8 @@ namespace bismarck.world
             Hex rightHex = coord.GetNeighbor(direction);
             Hex leftHex = coord.GetNeighbor(direction - 1);
             Cell bCell = cell;
-            Cell rCell = Map.GetDefault(rightHex);
-            Cell lCell = Map.GetDefault(leftHex);
+            Cell rCell = Map[rightHex];
+            Cell lCell = Map[leftHex];
             
             if (lCell == null || rCell == null) return;
             

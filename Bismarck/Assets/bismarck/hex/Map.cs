@@ -12,87 +12,24 @@ namespace bismarck.hex
     public class Map<T>
     {
 
-        private Dictionary<Hex, T> _map;
-
-        private Hex _lowerBounds;
-        private Hex _upperBounds;
-        
         /// <summary>
-        /// Generate a new map in a hex shape.
+        /// The map containing the items.
         /// </summary>
-        public Map(int radius)
-        {
-            _map = new Dictionary<Hex, T>();
+        private T[,] _map;
 
-            /* From https://www.redblobgames.com/grids/hexagons/implementation.html */
-            for (int q = -radius; q <= radius; q++)
-            {
-                int r1 = Mathf.Max(-radius, -q - radius);
-                int r2 = Mathf.Min(radius, -q + radius);
-                for (int r = r1; r <= r2; r++)
-                {
-                    if (_lowerBounds.q > q) _lowerBounds = new Hex(q, _lowerBounds.r);
-                    if (_lowerBounds.r > r) _lowerBounds = new Hex(_lowerBounds.q, r);
-                    if (_upperBounds.q < q) _upperBounds = new Hex(q, _upperBounds.r);
-                    if (_upperBounds.r < r) _upperBounds = new Hex(_upperBounds.q, r);
-                    
-                    _map.Add(new Hex(q, r), default(T));
-                }
-            }
-        }
+        public int RowSize;
 
+        public int ColSize;
+        
         /// <summary>
         /// Generate an empty map.
         /// </summary>
-        public Map()
+        public Map(int rows, int cols)
         {
-            _map = new Dictionary<Hex, T>();
-        }
+            _map = new T[rows,cols];
 
-        /// <summary>
-        /// Generate a new map in a rectangular shape.
-        /// </summary>
-        /// <param name="left"></param>
-        /// <param name="right"></param>
-        /// <param name="top"></param>
-        /// <param name="bottom"></param>
-        public Map(int left, int right, int bottom, int top, bool pointedTop = true)
-        {
-            _map = new Dictionary<Hex, T>();
-            
-            /* From https://www.redblobgames.com/grids/hexagons/implementation.html */
-            if (pointedTop)
-            {
-                for (int r = bottom; r <= top; r++) 
-                { 
-                    int rOffset = Mathf.FloorToInt(r / 2.0f);
-                    for (int q = left - rOffset; q <= right - rOffset; q++) 
-                    {
-                        if (_lowerBounds.q > q) _lowerBounds = new Hex(q, _lowerBounds.r);
-                        if (_lowerBounds.r > r) _lowerBounds = new Hex(_lowerBounds.q, r);
-                        if (_upperBounds.q < q) _upperBounds = new Hex(q, _upperBounds.r);
-                        if (_upperBounds.r < r) _upperBounds = new Hex(_upperBounds.q, r);
-                        
-                        _map.Add(new Hex(q, r), default(T));
-                    }
-                }
-            }
-            else
-            {
-                for (int q = left; q <= right; q++) 
-                {
-                    int qOffset = Mathf.FloorToInt(q / 2.0f);
-                    for (int r = bottom - qOffset; r <= top - qOffset; r++)
-                    {
-                        if (_lowerBounds.q > q) _lowerBounds = new Hex(q, _lowerBounds.r);
-                        if (_lowerBounds.r > r) _lowerBounds = new Hex(_lowerBounds.q, r);
-                        if (_upperBounds.q < q) _upperBounds = new Hex(q, _upperBounds.r);
-                        if (_upperBounds.r < r) _upperBounds = new Hex(_upperBounds.q, r);
-                        
-                        _map.Add(new Hex(q, r), default(T));
-                    }
-                }
-            }
+            RowSize = rows;
+            ColSize = cols;
         }
 
         /// <summary>
@@ -103,21 +40,16 @@ namespace bismarck.hex
         {
             List<(Hex coord, T value)> o = new List<(Hex coord, T value)>();
 
-            foreach (var key in _map.Keys)
+            for (int r = 0; r < _map.GetLength(0); r++)
             {
-                o.Add((key, _map[key]));
+                for (int c = 0; c < _map.GetLength(1); c++)
+                {
+                    Hex coord = Hex.FromOffset(r, c);
+                    o.Add((coord, _map[r, c]));
+                }
             }
             
             return o;
-        }
-
-        /// <summary>
-        /// Get the extents of this map.
-        /// </summary>
-        /// <returns></returns>
-        public (Hex lower, Hex upper) GetBounds()
-        {
-            return (_lowerBounds, _upperBounds);
         }
 
         /// <summary>
@@ -129,45 +61,16 @@ namespace bismarck.hex
         /// <param name="top"></param>
         /// <param name="pointedTop"></param>
         /// <returns></returns>
-        public List<(Hex coord, T value)> GetHexes(int left, int right, int bottom, int top, bool pointedTop = true)
+        public List<(Hex coord, T value)> GetHexes(int left, int right, int bottom, int top)
         {
             List<(Hex coord, T value)> o = new List<(Hex coord, T value)>();
 
-            /* From https://www.redblobgames.com/grids/hexagons/implementation.html */
-            if (pointedTop)
+            for (int r = bottom; r <= top; r++)
             {
-                for (int r = bottom; r <= top; r++) 
-                { 
-                    int rOffset = Mathf.FloorToInt(r / 2.0f);
-                    for (int q = left - rOffset; q <= right - rOffset; q++) 
-                    {
-                        try
-                        {
-                            o.Add((new Hex(q, r), _map[new Hex(q, r)]));
-                        }
-                        catch (Exception)
-                        {
-                            Debug.LogWarning("Caution - attempting to access hex " + new Hex(q, r) + " which is off the map.");
-                        }
-                    }
-                }
-            }
-            else
-            {
-                for (int q = left; q <= right; q++) 
+                for (int c = left; c <= right; c++)
                 {
-                    int qOffset = Mathf.FloorToInt(q / 2.0f);
-                    for (int r = bottom - qOffset; r <= top - qOffset; r++)
-                    {
-                        try
-                        {
-                            o.Add((new Hex(q, r), _map[new Hex(q, r)]));
-                        }
-                        catch (Exception)
-                        {
-                            Debug.LogWarning("Caution - attempting to access hex " + new Hex(q, r) + " which is off the map.");
-                        }
-                    }
+                    Hex coord = Hex.FromOffset(r, c);
+                    o.Add((coord, _map[r, c]));
                 }
             }
             
@@ -181,42 +84,34 @@ namespace bismarck.hex
         /// <returns></returns>
         public T Get(Hex coordinate)
         {
-            return _map[coordinate];
+            var offset = coordinate.ToOffsetCoord();
+            return _map[offset.row, offset.col];
         }
 
         /// <summary>
-        /// Get like the other method, but catch and return nulls/defaults for non-existent values.
+        /// Direct map accessor
         /// </summary>
-        /// <param name="coordinates"></param>
-        /// <returns></returns>
-        public T GetDefault(Hex coordinates)
+        /// <param name="r"></param>
+        /// <param name="c"></param>
+        public T this[int r, int c]
         {
-            try
+            get => _map[r, c];
+            set => _map[r, c] = value;
+        }
+
+        public T this[Hex h]
+        {
+            get
             {
-                return _map[coordinates];
+                var offset = h.ToOffsetCoord();
+                return _map[offset.row, offset.col];
             }
-            catch (Exception)
+            set
             {
-                return default(T);
+                var offset = h.ToOffsetCoord();
+                _map[offset.row, offset.col] = value;
             }
         }
 
-        /// <summary>
-        /// Set (or add) the value provided.
-        /// </summary>
-        /// <param name="coordinate"></param>
-        /// <param name="value"></param>
-        public void Set(Hex coordinate, T value)
-        {
-            if(_map.Keys.Contains(coordinate))
-            {
-                _map[coordinate] = value;
-            }
-            else
-            {
-                _map.Add(coordinate, value);
-            }
-        }
-        
     }
 }

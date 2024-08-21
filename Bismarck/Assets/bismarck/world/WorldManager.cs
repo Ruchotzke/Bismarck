@@ -70,7 +70,7 @@ namespace bismarck.world
         private void Start()
         {
             /* Generate a new world */
-            _world = new World(WorldSize.x, WorldSize.y, 1);
+            _world = new World(WorldSize.x, WorldSize.y);
             _chunks = new Chunk[WorldSize.x,WorldSize.y];
 
             /* Instantiate the chunks */
@@ -89,7 +89,7 @@ namespace bismarck.world
 
         public void RegenWorld()
         {
-            _world = new World(WorldSize.x, WorldSize.y, 0);
+            _world = new World(WorldSize.x, WorldSize.y);
             
             UpdateAll();
         } 

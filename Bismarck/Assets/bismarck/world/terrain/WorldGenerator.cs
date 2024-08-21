@@ -21,8 +21,7 @@ namespace bismarck.world.terrain
         public void GenerateTiles(Map<Cell> map, Layout hexLayout)
         {
             /* Determine helpful landmarks */
-            var bounds = map.GetBounds();
-            Hex center = new Hex((bounds.lower.q + bounds.upper.q) / 2, (bounds.lower.r + bounds.upper.r) / 2);
+            Hex center = Hex.FromOffset(map.RowSize / 2, map.ColSize / 2);
             
             /* Determine seed */
             Vector3 seedPoint = Random.insideUnitCircle * Random.Range(0f, 100f);
@@ -54,21 +53,21 @@ namespace bismarck.world.terrain
                 {
                     case 0:
                         ncell.Color = new Color(0.0f, 0.2f, 0.8f);
-                        map.Set(hex.coord, ncell);
+                        map[hex.coord] = ncell;
                         break;
                     case 1:
                         ncell.Color = new Color(0.8f, 0.8f, 0.0f);
-                        map.Set(hex.coord, ncell);
+                        map[hex.coord] = ncell;
                         break;
                     case 2:
                     case 3:
                     case 4:
                         ncell.Color = new Color(0.0f, 0.7f, 0.2f);
-                        map.Set(hex.coord, ncell);
+                        map[hex.coord] = ncell;
                         break;
                     default:
                         ncell.Color = new Color(1.0f, 1.0f, 1.0f);
-                        map.Set(hex.coord, ncell);
+                        map[hex.coord] = ncell;
                         break;
                 }
             }
