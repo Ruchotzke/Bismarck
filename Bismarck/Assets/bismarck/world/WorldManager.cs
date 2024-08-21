@@ -40,6 +40,21 @@ namespace bismarck.world
         /// </summary>
         private Chunk[,] _chunks;
 
+        /// <summary>
+        /// The distribution curve for world generation.
+        /// </summary>
+        [Header("WorldGen")] public AnimationCurve DistributionCurve;
+
+        /// <summary>
+        /// The curve shaping the world's height over a range.
+        /// </summary>
+        public AnimationCurve WorldShapeCurve;
+
+        /// <summary>
+        /// The scale used when sampling noise.
+        /// </summary>
+        public float SampleScale = 0.1f;
+
         #endregion
         
         private void Awake()
@@ -72,9 +87,9 @@ namespace bismarck.world
             }
         }
 
-        public void RegenWorld(int numIterations)
+        public void RegenWorld()
         {
-            _world = new World(WorldSize.x, WorldSize.y, numIterations);
+            _world = new World(WorldSize.x, WorldSize.y, 0);
             
             UpdateAll();
         } 

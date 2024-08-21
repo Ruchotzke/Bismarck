@@ -48,7 +48,7 @@ namespace bismarck.world
             
             /* Generate the world */
             WorldGenerator gen = new WorldGenerator();
-            gen.GenerateTiles(Map, genIterations);
+            gen.GenerateTiles(Map, HexLayout);
         }
 
         /// <summary>

@@ -6,9 +6,7 @@ using UnityEngine;
 
 public class GenStepper : MonoBehaviour
 {
-    private int iterations = 0;
-
-    private bool paused = false;
+    private bool paused = true;
 
     private void Start()
     {
@@ -27,10 +25,10 @@ public class GenStepper : MonoBehaviour
     {
         while (true)
         {
-            yield return new WaitForSeconds(0.8f);
+            yield return new WaitForSeconds(0.5f);
             yield return new WaitUntil(() => !paused);
             
-            WorldManager.Instance.RegenWorld(iterations++);
+            WorldManager.Instance.RegenWorld();
         }
     }
 }
