@@ -33,14 +33,19 @@ namespace bismarck.world.terrain
             /* Generate a circle */
             foreach (var hex in map.GetAllHexes())
             {
+                /* Sample from a cylinder for horizontal wrapping */
+                float angle = Mathf.PI * 2 * (hex.coord.ToOffsetCoord().col / (float) map.ColSize);
+                float x = Mathf.Cos(angle) * WorldManager.Instance.AngularSampleScale;
+                float y = Mathf.Sin(angle) * WorldManager.Instance.AngularSampleScale;
+                
                 /* Sample this wrt world coordinate */
                 Vector3 worldCoord = hexLayout.HexToWorld(hex.coord);
-                worldCoord = seedPoint + (WorldManager.Instance.SampleScale * worldCoord);
-                float sample = noise.GetNoise(worldCoord.x, worldCoord.z) + 1.0f;
+                worldCoord = seedPoint + (WorldManager.Instance.VerticalSampleScale * worldCoord);
+                float sample = noise.GetNoise(x, y, worldCoord.z) + 1.0f;
                 sample /= 2;
                 sample = WorldManager.Instance.DistributionCurve.Evaluate(sample);
                 sample *= 6;
-                
+
                 /* Modulate the coordinate based on distance */
                 // float dist = Hex.Distance(hex.coord, center);
                 // sample = WorldManager.Instance.WorldShapeCurve.Evaluate(dist / 50.0f) * sample;

@@ -51,9 +51,14 @@ namespace bismarck.world
         public AnimationCurve WorldShapeCurve;
 
         /// <summary>
-        /// The scale used when sampling noise.
+        /// The scale used when sampling noise along the latitudes.
         /// </summary>
-        public float SampleScale = 0.1f;
+        public float VerticalSampleScale = 6f;
+
+        /// <summary>
+        /// The radius used when sampling along the longitudes.
+        /// </summary>
+        public float AngularSampleScale = 30f;
 
         #endregion
         
