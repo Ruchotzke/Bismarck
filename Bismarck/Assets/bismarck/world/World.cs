@@ -147,7 +147,7 @@ namespace bismarck.world
         private void HandleBridge(Mesher m, Hex coord, Cell cell, int direction)
         {
             Hex nHex = coord.GetNeighbor(direction);
-            Cell nValue = Map[nHex];
+            Cell nValue = Map[nHex, true];
             if (nValue != null)
             {
                 Vector3 baseHeight = Vector3.up * cell.Height * WorldConfiguration.HEIGHT_MULTPLIER;
@@ -214,8 +214,8 @@ namespace bismarck.world
             Hex rightHex = coord.GetNeighbor(direction);
             Hex leftHex = coord.GetNeighbor(direction - 1);
             Cell bCell = cell;
-            Cell rCell = Map[rightHex];
-            Cell lCell = Map[leftHex];
+            Cell rCell = Map[rightHex, true];
+            Cell lCell = Map[leftHex, true];
             
             if (lCell == null || rCell == null) return;
             

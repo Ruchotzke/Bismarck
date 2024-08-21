@@ -99,12 +99,27 @@ namespace bismarck.hex
             set => _map[r, c] = value;
         }
 
-        public T this[Hex h]
+        public T this[Hex h, bool nullOOB = false]
         {
             get
             {
-                var offset = h.ToOffsetCoord();
-                return _map[offset.row, offset.col];
+                if (nullOOB)
+                {
+                    try
+                    {
+                        var offset = h.ToOffsetCoord();
+                        return _map[offset.row, offset.col];
+                    }
+                    catch (Exception)
+                    {
+                        return default(T);
+                    } 
+                }
+                else
+                {
+                    var offset = h.ToOffsetCoord();
+                    return _map[offset.row, offset.col];
+                }
             }
             set
             {
