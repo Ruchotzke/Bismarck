@@ -37,8 +37,8 @@ namespace bismarck.world.terrain
         public TerrainGenerator(int maxElevation, float terrainScale, float heightFalloff)
         {
             /* Generate the samplers */
-            _elevation = new Fractal(4, 0.7f);
-            _moisture = new Fractal(2, 0.5f);
+            _elevation = new Fractal(1, 1, 1);
+            _moisture = new Fractal(1, 1, 1);
 
             _maxElevation = maxElevation;
             _terrainScale = terrainScale;

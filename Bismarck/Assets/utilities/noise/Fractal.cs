@@ -1,80 +1,99 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace utilities.noise
 {
+
     /// <summary>
-    /// Generate fractal noise from successive noise.
+    /// Fractal noise sampling.
     /// </summary>
     public class Fractal
     {
-        /// <summary>
-        /// How many octaves there are.
-        /// </summary>
-        public readonly int Octaves;
+        private float _lacunarity;
 
-        /// <summary>
-        /// How persistent each octave is.
-        /// </summary>
-        public readonly float Persistence;
+        private float _persistence;
 
-        /// <summary>
-        /// The perlin noise generator.
-        /// </summary>
-        private Perlin _perlin;
+        private int _octaves;
 
-        /// <summary>
-        /// Octave parameters for easier computation.
-        /// </summary>
-        private List<(Vector3 offset, float amplitude, float frequency)> _octaves;
+        private FastNoiseLite _noise;
+        
+        
 
-        /// <summary>
-        /// The max value of the noise (used for normalizing).
-        /// </summary>
-        private float _maxValue;
-
-        /// <summary>
-        /// Generate a new fractal noise generator.
-        /// </summary>
-        /// <param name="octaves"></param>
-        /// <param name="persistence"></param>
-        public Fractal(int octaves, float persistence)
+        public Fractal(float lacunarity, float persistence, int octaves)
         {
-            Random.InitState(0);
+            _lacunarity = lacunarity;
+            _persistence = persistence;
+            _octaves = octaves;
             
-            /* Parms */
-            Octaves = octaves;
-            Persistence = persistence;
-            
-            /* Noise generator */
-            _perlin = new Perlin();
-            
-            /* Octave information */
-            _octaves = new List<(Vector3 offset, float amplitude, float frequency)>();
-            _maxValue = 0;
-            for (int i = 0; i < octaves; i++)
-            {
-                _maxValue += Mathf.Pow(Persistence, i);
-                Vector3 offset = Random.insideUnitSphere;
-                offset.y = 0;
-                _octaves.Add((offset, Mathf.Pow(Persistence, i), Mathf.Pow(2, i)));
-            }
+            _noise = new FastNoiseLite();
+            _noise.SetNoiseType(FastNoiseLite.NoiseType.Perlin);
         }
 
         /// <summary>
-        /// Sample the noise at a given point.
+        /// Sample fractal noise from a plane.
         /// </summary>
-        /// <param name="point"></param>
+        /// <param name="coordinate"></param>
+        /// <param name="seedFrequency"></param>
+        /// <param name="seed"></param>
         /// <returns></returns>
-        public float Sample(Vector3 point)
+        public float Sample(Vector2 coordinate, float seedFrequency = 1, int seed = 0)
         {
-            float total = 0;
-            for (int i = 0; i < Octaves; i++)
+            float amplitude = 1;
+            float frequency = seedFrequency;
+            float totalAmp = 0;
+
+            float sample = 0.0f;
+
+            for (int o = 0; o < _octaves; o++)
             {
-                total += _perlin.Sample(point * _octaves[i].frequency + _octaves[i].offset) * _octaves[i].amplitude;
+                /* Perform the sample */
+                sample += _noise.GetNoise(coordinate.x * frequency + seed, coordinate.y * frequency + seed);
+                
+                /* Update state */
+                seed *= Mathf.FloorToInt(Random.value * 142342.0f - 1231.0f);
+                totalAmp += amplitude;
+                amplitude *= _persistence;
+                frequency *= _lacunarity;
             }
 
-            return total / _maxValue;
+            return sample / totalAmp;
+        }
+
+        /// <summary>
+        /// Sample fractal noise on the surface of a cylinder.
+        /// </summary>
+        /// <param name="seedAngularRadius"></param>
+        /// <param name="seed"></param>
+        /// <param name="y"></param>
+        /// <param name="seedVerticalFrequency"></param>
+        /// <param name="angle"></param>
+        /// <returns></returns>
+        public float SampleCylinder(float angle, float y, float seedVerticalFrequency, float seedAngularRadius, int seed = 0)
+        {
+            float amplitude = 1;
+            float vertFrequency = seedVerticalFrequency;
+            float angFrequency = seedAngularRadius;
+            float totalAmp = 0;
+
+            float sample = 0.0f;
+
+            for (int o = 0; o < _octaves; o++)
+            {
+                /* Compute the x and z coordinate */
+                float x = Mathf.Cos(angle) * angFrequency;
+                float z = Mathf.Sin(angle) * angFrequency;
+                
+                /* Perform the sample */
+                sample += _noise.GetNoise(x + seed, y * vertFrequency + seed, z + seed);
+                
+                /* Update state */
+                seed *= Mathf.FloorToInt(Random.value * 142342.0f - 1231.0f);
+                totalAmp += amplitude;
+                amplitude *= _persistence;
+                vertFrequency *= _lacunarity;
+                angFrequency *= _lacunarity;
+            }
+
+            return sample / totalAmp;
         }
     }
 }

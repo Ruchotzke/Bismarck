@@ -32,7 +32,7 @@ public class Heightmap : MonoBehaviour
     private void Update()
     {
         /* Noise generator */
-        Fractal noise = new Fractal(Octaves, Persistence);
+        Fractal noise = new Fractal(1, 1, 1);
         
         /* Generate a map */
         float[,] map = new float[100, 100];

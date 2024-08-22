@@ -3,6 +3,7 @@ using bismarck.hex;
 using Unity.Collections;
 using Unity.Jobs;
 using UnityEngine;
+using utilities.noise;
 using Random = UnityEngine.Random;
 
 namespace bismarck.world.terrain
@@ -27,21 +28,24 @@ namespace bismarck.world.terrain
             Vector3 seedPoint = Random.insideUnitCircle * Random.Range(0f, 100f);
             
             /* Initialize noise */
-            FastNoiseLite noise = new FastNoiseLite();
-            noise.SetNoiseType(FastNoiseLite.NoiseType.Perlin);
+            // FastNoiseLite noise = new FastNoiseLite();
+            // noise.SetNoiseType(FastNoiseLite.NoiseType.Perlin);
+            Fractal noise = new Fractal(1, 0f, 1);
             
             /* Generate a circle */
             foreach (var hex in map.GetAllHexes())
             {
                 /* Sample from a cylinder for horizontal wrapping */
                 float angle = Mathf.PI * 2 * (hex.coord.ToOffsetCoord().col / (float) map.ColSize);
-                float x = Mathf.Cos(angle) * WorldManager.Instance.AngularSampleScale;
-                float y = Mathf.Sin(angle) * WorldManager.Instance.AngularSampleScale;
+                // float x = Mathf.Cos(angle) * WorldManager.Instance.AngularSampleScale;
+                // float y = Mathf.Sin(angle) * WorldManager.Instance.AngularSampleScale;
                 
                 /* Sample this wrt world coordinate */
                 Vector3 worldCoord = hexLayout.HexToWorld(hex.coord);
                 worldCoord = seedPoint + (WorldManager.Instance.VerticalSampleScale * worldCoord);
-                float sample = noise.GetNoise(x, y, worldCoord.z) + 1.0f;
+                float sample = noise.SampleCylinder(angle, worldCoord.z, WorldManager.Instance.VerticalSampleScale,
+                    WorldManager.Instance.AngularSampleScale, 0);
+                // float sample = noise.GetNoise(x, y, worldCoord.z) + 1.0f;
                 sample /= 2;
                 sample = WorldManager.Instance.DistributionCurve.Evaluate(sample);
                 sample *= 6;
