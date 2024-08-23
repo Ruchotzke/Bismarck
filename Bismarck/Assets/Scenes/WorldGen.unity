@@ -457,15 +457,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   WorldMaterial: {fileID: 2100000, guid: eeb4df9a17e2f254da27351782ce4e82, type: 2}
-  WorldSize: {x: 8, y: 8}
+  WorldSize: {x: 16, y: 16}
   DistributionCurve:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
-      time: 0.4
+      time: 0.5
       value: 0
-      inSlope: 1.6666666
-      outSlope: 1.6666666
+      inSlope: 2
+      outSlope: 2
       tangentMode: 34
       weightedMode: 0
       inWeight: 0
@@ -473,8 +473,8 @@ MonoBehaviour:
     - serializedVersion: 3
       time: 1
       value: 1
-      inSlope: 1.6666666
-      outSlope: 1.6666666
+      inSlope: 2
+      outSlope: 2
       tangentMode: 34
       weightedMode: 0
       inWeight: 0.33333334
@@ -506,8 +506,12 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  VerticalSampleScale: 7
-  AngularSampleScale: 110
+  VerticalSampleScale: 2
+  AngularSampleScale: 140
+  Seed: {x: 50, y: 50, z: 50}
+  Lacunarity: 8.31
+  Persistence: 0.102
+  Octaves: 5
 --- !u!4 &2077734133
 Transform:
   m_ObjectHideFlags: 0

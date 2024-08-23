@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using bismarck.meshing;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace bismarck.world
 {
@@ -60,6 +61,14 @@ namespace bismarck.world
         /// </summary>
         public float AngularSampleScale = 30f;
 
+        public Vector3 Seed;
+
+        [Range(0, 20)] public float Lacunarity = 1;
+
+        [Range(0, 1)] public float Persistence = 1;
+
+        public int Octaves = 1;
+
         #endregion
         
         private void Awake()
@@ -69,7 +78,10 @@ namespace bismarck.world
             Instance = this;
             
             /* Initialize the world seed */
-            WorldConfiguration.SEED = DateTime.Now.Second;
+            Random.InitState((int)DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+            WorldConfiguration.SEED = DateTime.Now.Second + DateTime.Now.Day + DateTime.Now.Month + DateTime.Now.Year +
+                                      DateTime.Now.Millisecond + Random.Range(-50000, 50000);
+            Seed = new Vector3(WorldConfiguration.SEED, WorldConfiguration.SEED, WorldConfiguration.SEED);
         }
 
         private void Start()

@@ -46,7 +46,11 @@ namespace utilities.noise
             for (int o = 0; o < _octaves; o++)
             {
                 /* Perform the sample */
-                sample += _noise.GetNoise(coordinate.x * frequency + seed, coordinate.y * frequency + seed);
+                float singleSample = _noise.GetNoise(coordinate.x * frequency + seed, coordinate.y * frequency + seed);
+                singleSample = (singleSample + 1) / 2.0f;
+                singleSample *= amplitude;
+
+                sample += singleSample;
                 
                 /* Update state */
                 seed *= Mathf.FloorToInt(Random.value * 142342.0f - 1231.0f);
@@ -67,7 +71,7 @@ namespace utilities.noise
         /// <param name="seedVerticalFrequency"></param>
         /// <param name="angle"></param>
         /// <returns></returns>
-        public float SampleCylinder(float angle, float y, float seedVerticalFrequency, float seedAngularRadius, int seed = 0)
+        public float SampleCylinder(float angle, float y, float seedVerticalFrequency, float seedAngularRadius, Vector3 seed)
         {
             float amplitude = 1;
             float vertFrequency = seedVerticalFrequency;
@@ -83,10 +87,21 @@ namespace utilities.noise
                 float z = Mathf.Sin(angle) * angFrequency;
                 
                 /* Perform the sample */
-                sample += _noise.GetNoise(x + seed, y * vertFrequency + seed, z + seed);
+                float singleSample = _noise.GetNoise(x + seed.x, y * vertFrequency + seed.y, z + seed.z);
+                singleSample = (singleSample + 1) / 2.0f;
+                singleSample *= amplitude;
+
+                if (float.IsNaN(singleSample))
+                {
+                    Debug.Log("NaN!");
+                }
+
+                sample += singleSample;
                 
                 /* Update state */
-                seed *= Mathf.FloorToInt(Random.value * 142342.0f - 1231.0f);
+                seed.y += Random.value * 1313 - 500.0f;
+                seed.x += Random.value * 1313 - 500.0f;
+                seed.z = seed.x;
                 totalAmp += amplitude;
                 amplitude *= _persistence;
                 vertFrequency *= _lacunarity;
