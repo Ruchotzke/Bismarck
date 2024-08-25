@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using bismarck.world;
+using Unity.Collections;
 using UnityEngine;
 
 namespace bismarck.hex
@@ -8,14 +10,13 @@ namespace bismarck.hex
     /// <summary>
     /// A hex map.
     /// </summary>
-    /// <typeparam name="T">The type of object to store at each hex coordinate.</typeparam>
-    public class Map<T>
+    public class Map
     {
 
         /// <summary>
         /// The map containing the items.
         /// </summary>
-        private T[,] _map;
+        private Cell[,] _map;
 
         public int RowSize;
 
@@ -26,7 +27,7 @@ namespace bismarck.hex
         /// </summary>
         public Map(int rows, int cols)
         {
-            _map = new T[rows,cols];
+            _map = new Cell[rows,cols];
 
             RowSize = rows;
             ColSize = cols;
@@ -36,9 +37,9 @@ namespace bismarck.hex
         /// Return all hexes from this map.
         /// </summary>
         /// <returns></returns>
-        public List<(Hex coord, T value)> GetAllHexes()
+        public List<(Hex coord, Cell value)> GetAllHexes()
         {
-            List<(Hex coord, T value)> o = new List<(Hex coord, T value)>();
+            List<(Hex coord, Cell value)> o = new List<(Hex coord, Cell value)>();
 
             for (int r = 0; r < _map.GetLength(0); r++)
             {
@@ -61,9 +62,9 @@ namespace bismarck.hex
         /// <param name="top"></param>
         /// <param name="pointedTop"></param>
         /// <returns></returns>
-        public List<(Hex coord, T value)> GetHexes(int left, int right, int bottom, int top)
+        public List<(Hex coord, Cell value)> GetHexes(int left, int right, int bottom, int top)
         {
-            List<(Hex coord, T value)> o = new List<(Hex coord, T value)>();
+            List<(Hex coord, Cell value)> o = new List<(Hex coord, Cell value)>();
 
             for (int r = bottom; r <= top; r++)
             {
@@ -82,7 +83,7 @@ namespace bismarck.hex
         /// </summary>
         /// <param name="coordinate"></param>
         /// <returns></returns>
-        public T Get(Hex coordinate)
+        public Cell Get(Hex coordinate)
         {
             var offset = coordinate.ToOffsetCoord();
             return _map[offset.row, offset.col];
@@ -93,13 +94,13 @@ namespace bismarck.hex
         /// </summary>
         /// <param name="r"></param>
         /// <param name="c"></param>
-        public T this[int r, int c]
+        public Cell this[int r, int c]
         {
             get => _map[r, c];
             set => _map[r, c] = value;
         }
 
-        public T this[Hex h, bool nullOOB = false]
+        public Cell this[Hex h, bool nullOOB = false]
         {
             get
             {
@@ -112,7 +113,7 @@ namespace bismarck.hex
                     }
                     catch (Exception)
                     {
-                        return default(T);
+                        return default(Cell);
                     } 
                 }
                 else
@@ -125,6 +126,46 @@ namespace bismarck.hex
             {
                 var offset = h.ToOffsetCoord();
                 _map[offset.row, offset.col] = value;
+            }
+        }
+
+        /// <summary>
+        /// Convert this map into a parallel-friendly native array.
+        /// </summary>
+        /// <returns></returns>
+        public (NativeArray<(Hex coord, Cell.CellValueStruct data)> arr, int colSize, int rowSize) ToNativeArray()
+        {
+            NativeArray<(Hex coord, Cell.CellValueStruct data)> arr =
+                new NativeArray<(Hex coord, Cell.CellValueStruct data)>(ColSize * RowSize, Allocator.TempJob);
+
+            /* Add all entries into the array using row-major layout */
+            for (int r = 0; r < RowSize; r++)
+            {
+                for (int c = 0; c < ColSize; c++)
+                {
+                    int index = r * ColSize + c;
+                    Cell curr = this[r, c];
+                    arr[index] = (Hex.FromOffset(r, c), new Cell.CellValueStruct()
+                    {
+                        Color = curr.Color,
+                        Height = curr.Height
+                    });
+                }
+            }
+            
+            /* Return useful information */
+            return (arr, ColSize, RowSize);
+        }
+
+        /// <summary>
+        /// Update the contents of this map from a correctly generated native array.
+        /// </summary>
+        /// <param name="arr"></param>
+        public void UpdateFromNativeArray(NativeArray<(Hex coord, Cell.CellValueStruct data)> arr)
+        {
+            foreach (var item in arr)
+            {
+                this[item.coord] = new Cell(item.data.Color, item.data.Height);
             }
         }
 

@@ -28,5 +28,14 @@ namespace bismarck.world
             Color = c;
             Height = h;
         }
+
+        /// <summary>
+        /// A struct used for parallel programming.
+        /// </summary>
+        public struct CellValueStruct
+        {
+            public int Height;
+            public Color Color;
+        }
     }
 }

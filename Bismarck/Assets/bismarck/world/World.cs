@@ -22,7 +22,7 @@ namespace bismarck.world
         /// <summary>
         /// The map containing world data.
         /// </summary>
-        public Map<Cell> Map;
+        public Map Map;
         
         /// <summary>
         /// A reference to the prefab needed for cell labels.
@@ -40,7 +40,7 @@ namespace bismarck.world
         {
             /* Generate the layout and map */
             HexLayout = new Layout(Orientation.layoutPointTop, new Vector3(1, 0, 1), Vector3.zero);
-            Map = new Map<Cell>(verticalChunks * WorldConfiguration.CHUNK_SIZE_Z, horizontalChunks * WorldConfiguration.CHUNK_SIZE_X);
+            Map = new Map(verticalChunks * WorldConfiguration.CHUNK_SIZE_Z, horizontalChunks * WorldConfiguration.CHUNK_SIZE_X);
 
             /* Seed the RNG */
             Random.InitState(WorldConfiguration.SEED);

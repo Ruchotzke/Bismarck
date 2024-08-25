@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using bismarck.meshing;
 using TMPro;
 using UnityEngine;
@@ -176,6 +178,28 @@ namespace bismarck.hex
         }
 
         /// <summary>
+        /// Get all hexes (inclusive) within the radius of this hex.
+        /// </summary>
+        /// <param name="radius"></param>
+        /// <returns></returns>
+        public List<Hex> GetRange(int radius)
+        {
+            List<Hex> results = new List<Hex>();
+            results.Add(this);
+            
+            for (int q = -radius; q <= radius; q++)
+            {
+                for(int r = Mathf.Max(-radius, -q-radius); r <= Mathf.Min(radius, -q+radius); r++)
+                {
+                    int s = -q - r;
+                    results.Add(this + new Hex(q, r, s));
+                }
+            }
+            
+            return results;
+        }
+
+        /// <summary>
         /// Linearly interpolate between two hex values.
         /// </summary>
         /// <param name="a">The starting point</param>
@@ -212,12 +236,39 @@ namespace bismarck.hex
 
             return output;
         }
+
+        /// <summary>
+        /// Get the ring of hexes surrounding the center at a given radius.
+        /// </summary>
+        /// <param name="center"></param>
+        /// <param name="radius"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException">Radius must be greater than zero</exception>
+        public static List<Hex> Ring(Hex center, int radius)
+        {
+            if (radius < 1) throw new ArgumentException("The radius for a ring must be >= 1.");
+
+            List<Hex> output = new List<Hex>();
+            
+            /* Offset into a given direction */
+            Hex h = center + Directions[4] * radius;
+            for (int side = 0; side < 6; side++)
+            {
+                for (int len = 0; len < radius; len++)
+                {
+                    output.Add(h);
+                    h = h.GetNeighbor(side);
+                }
+            }
+
+            return output;
+        }
         
         /// <summary>
         /// Convert this hex coordinate to offset form.
         /// </summary>
         /// <returns></returns>
-        public (int row, int col) ToOffsetCoord()
+        public readonly (int row, int col) ToOffsetCoord()
         {
             float col = q + (int)((r - 1 * ((int)r & 1)) / 2);
             float row = r;
