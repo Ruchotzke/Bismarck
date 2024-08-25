@@ -91,11 +91,6 @@ namespace utilities.noise
                 singleSample = (singleSample + 1) / 2.0f;
                 singleSample *= amplitude;
 
-                if (float.IsNaN(singleSample))
-                {
-                    Debug.Log("NaN!");
-                }
-
                 sample += singleSample;
                 
                 /* Update state */

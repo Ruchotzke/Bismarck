@@ -457,7 +457,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   WorldMaterial: {fileID: 2100000, guid: eeb4df9a17e2f254da27351782ce4e82, type: 2}
-  WorldSize: {x: 16, y: 16}
+  WorldSize: {x: 20, y: 16}
   DistributionCurve:
     serializedVersion: 2
     m_Curve:
@@ -507,7 +507,7 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   VerticalSampleScale: 2
-  AngularSampleScale: 140
+  AngularSampleScale: 180
   Seed: {x: 50, y: 50, z: 50}
   Lacunarity: 8.31
   Persistence: 0.102

@@ -3,6 +3,7 @@ using bismarck.hex;
 using Unity.Collections;
 using Unity.Jobs;
 using UnityEngine;
+using utilities;
 using utilities.noise;
 using Random = UnityEngine.Random;
 
@@ -23,9 +24,8 @@ namespace bismarck.world.terrain
         {
             /* Determine helpful landmarks */
             Hex center = Hex.FromOffset(map.RowSize / 2, map.ColSize / 2);
-            
-            /* Determine seed */
-            Vector3 seedPoint = Random.insideUnitCircle * Random.Range(0f, 100f);
+            Vector3 centerWorldCoord = hexLayout.HexToWorld(center);
+            float zScale = Vector3.Distance(centerWorldCoord, hexLayout.HexToWorld(Hex.FromOffset(map.RowSize / 2, 0)));
             
             /* Initialize noise */
             Fractal noise = new Fractal(WorldManager.Instance.Lacunarity, WorldManager.Instance.Persistence, WorldManager.Instance.Octaves);
@@ -36,22 +36,32 @@ namespace bismarck.world.terrain
                 /* Sample from a cylinder for horizontal wrapping */
                 float angle = Mathf.PI * 2 * (hex.coord.ToOffsetCoord().col / (float) map.ColSize);
                 
-                /* Sample this wrt world coordinate */
-                Vector3 worldCoord = hexLayout.HexToWorld(hex.coord);
-                worldCoord = seedPoint + (WorldManager.Instance.VerticalSampleScale * worldCoord);
-                float sample = noise.SampleCylinder(angle, worldCoord.z, WorldManager.Instance.VerticalSampleScale,
+                /* Sample this wrt world coordinate for elevation*/
+                Vector3 hexWorldCoord = hexLayout.HexToWorld(hex.coord);
+                Vector3 sampleCoord = WorldManager.Instance.VerticalSampleScale * hexWorldCoord;
+                float elevationSample = noise.SampleCylinder(angle, sampleCoord.z, WorldManager.Instance.VerticalSampleScale,
                     WorldManager.Instance.AngularSampleScale, WorldManager.Instance.Seed);
-                sample = WorldManager.Instance.DistributionCurve.Evaluate(sample);
-                sample *= 6;
-
-                /* Modulate the coordinate based on distance */
-                // float dist = Hex.Distance(hex.coord, center);
-                // sample = WorldManager.Instance.WorldShapeCurve.Evaluate(dist / 50.0f) * sample;
+                elevationSample = WorldManager.Instance.DistributionCurve.Evaluate(elevationSample);
+                elevationSample *= 6;
+                
+                /* Get the distance from the equator */
+                float distanceToEquator =
+                    Mathf.Clamp01(Mathf.Abs(centerWorldCoord.z - hexWorldCoord.z) / zScale * 1.5f);
+                
+                /* Force more oceans further south */
+                elevationSample -= Mathf.Lerp(0.0f, 3.0f, Easing.EaseOutExpo(distanceToEquator));
+                
+                /* Sample moisture */
+                float moistureSample = noise.SampleCylinder(angle, sampleCoord.z, WorldManager.Instance.VerticalSampleScale,
+                    WorldManager.Instance.AngularSampleScale, WorldManager.Instance.Seed * 4);
+                if (elevationSample < 0.5f) moistureSample = 1.0f;
+                
+                /* Sample heat */
+                float heatSample = 1f - distanceToEquator;
                 
                 /* Convert */
-                sample = Mathf.Clamp(sample, 0.0f, 10.0f);
-                int conv = Mathf.RoundToInt(sample);
-                if(conv < 0){Debug.Log("neg!");}
+                elevationSample = Mathf.Clamp(elevationSample, 0.0f, 10.0f);
+                int conv = Mathf.RoundToInt(elevationSample);
                 Cell ncell = new Cell(Color.magenta, conv);
                 switch (conv)
                 {
@@ -74,6 +84,18 @@ namespace bismarck.world.terrain
                         map[hex.coord] = ncell;
                         break;
                 }
+
+                if (heatSample < 0.005f)
+                {
+                    ncell.Color = Color.white;
+                    ncell.Height = 5;
+                }
+                else
+                {
+                    // ncell.Color = Color.HSVToRGB(heatSample, 1, 1);
+                }
+                
+                
             }
         }
     }
